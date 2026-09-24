@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Types, lint, tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # @upcom/supabase est installé depuis le dépôt upcom-backend (tag Git).
+      # Dépôt privé : créer le secret UPCOM_BACKEND_TOKEN (fine-grained token, lecture seule sur upcom-backend).
+      - name: Accès au dépôt upcom-backend
+        env:
+          UPCOM_BACKEND_TOKEN: ${{ secrets.UPCOM_BACKEND_TOKEN }}
+        run: |
+          if [ -n "$UPCOM_BACKEND_TOKEN" ]; then
+            git config --global url."https://x-access-token:${UPCOM_BACKEND_TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
+          else
+            git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          fi
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - name: Build
+        run: npm run build
+        env:
+          # Valeurs factices : le build n'appelle pas Supabase.
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: ci-placeholder

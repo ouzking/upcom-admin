@@ -1,111 +1,99 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@import "@fontsource-variable/manrope/wght.css";
+@import "@fontsource-variable/bricolage-grotesque/wght.css";
+@import "tailwindcss";
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+/* ==========================================================================
+   UPCOM ADMIN — système de design
+   Même charte que le site public, déclinée pour un outil de productivité :
+   bleu institutionnel pour la structure, orange réservé aux signaux (nouveau,
+   notifications), neutres froids pour la lisibilité.
+   ========================================================================== */
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@theme {
+  --color-brand: #013592;
+  --color-brand-bright: #0172e7;
+  --color-brand-deep: #012466;
+  --color-brand-night: #011a4a;
+  --color-brand-50: #eef3fc;
+  --color-brand-100: #d9e4f8;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
+  --color-accent: #fd8e03;
+  --color-accent-deep: #eb4602;
+  --color-accent-50: #fff4e5;
+
+  --color-ink: #0a1633;
+  --color-ink-soft: #2b3656;
+  --color-muted: #5b6480;
+  --color-subtle: #8a93ab;
+  --color-line: #e3e8f2;
+  --color-line-strong: #cfd6e4;
+  --color-mist: #f5f7fb;
+  --color-paper: #ffffff;
+
+  --color-success: #0f7b4b;
+  --color-success-50: #e7f6ee;
+  --color-warning: #a55a00;
+  --color-warning-50: #fff4e0;
+  --color-danger: #c42b1c;
+  --color-danger-50: #fdecea;
+
+  --font-sans: "Manrope Variable", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque Variable", "Segoe UI", system-ui, sans-serif;
+
+  --shadow-card: 0 1px 2px rgb(10 22 51 / 0.04), 0 1px 3px rgb(10 22 51 / 0.06);
+  --shadow-pop: 0 12px 32px -8px rgb(10 22 51 / 0.18), 0 2px 6px rgb(10 22 51 / 0.06);
+
+  --ease-premium: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-mist font-sans text-[15px] text-ink antialiased;
+  }
+
+  h1, h2, h3 {
+    @apply font-display tracking-tight;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-bright);
+    outline-offset: 2px;
+  }
+
+  [type="search"]::-webkit-search-cancel-button {
+    appearance: none;
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+@utility bg-gradient-brand {
+  background-image: linear-gradient(135deg, #013592 0%, #0172e7 100%);
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+@utility bg-gradient-accent {
+  background-image: linear-gradient(135deg, #eb4602 0%, #fd8e03 100%);
 }
 
-body {
-  margin: 0;
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+/* Aperçu du contenu riche (même structure que le rendu du site public). */
+.prose-upcom {
+  @apply space-y-4 leading-relaxed text-ink-soft;
 }
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
-}
+.prose-upcom h2 { @apply pt-2 text-xl font-semibold text-ink; }
+.prose-upcom h3 { @apply pt-1 text-lg font-semibold text-ink; }
+.prose-upcom ul { @apply list-disc space-y-1 pl-5; }
+.prose-upcom ol { @apply list-decimal space-y-1 pl-5; }
+.prose-upcom blockquote { @apply border-l-4 border-accent pl-4 italic text-muted; }
+.prose-upcom a { @apply font-medium text-brand-bright underline underline-offset-2; }
+.prose-upcom strong { @apply font-semibold text-ink; }
