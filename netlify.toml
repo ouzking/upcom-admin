@@ -1,0 +1,39 @@
+# =============================================================================
+# UPCOM ADMIN — déploiement Netlify (https://upcom-admin.netlify.app)
+# -----------------------------------------------------------------------------
+# Les variables ci-dessous sont PUBLIQUES par nature (URL du projet + clé
+# publishable) : Vite les intègre au bundle envoyé au navigateur. La sécurité
+# repose sur la RLS du backend. Ne JAMAIS mettre ici une clé service_role /
+# sb_secret_… ni un mot de passe.
+# =============================================================================
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  VITE_SUPABASE_URL = "https://gopjiglltfohtzeqijsq.supabase.co"
+  VITE_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_7sz7_Mzej_DRrR1ru0_lIw_1NM69G3-"
+  VITE_PUBLIC_SITE_URL = "https://upcomagencyservice.netlify.app"
+
+# Application monopage : toutes les routes servent index.html.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    X-Robots-Tag = "noindex, nofollow"
+
+# Fichiers versionnés par Vite (nom avec empreinte) : cache long.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

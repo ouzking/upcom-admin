@@ -67,6 +67,18 @@ celui attendu par la configuration Auth du backend (`site_url`, redirections, `A
 | `npm run typecheck` | TypeScript (application + tests) |
 | `npm run lint` | ESLint (règles React Hooks / React Compiler, `no-explicit-any`) |
 | `npm test` | tests Vitest |
+| `npm run seed:demo` / `seed:demo:prod` | contenu d'exemple (base locale / en ligne) — voir ci-dessous |
+
+**Contenu d'exemple** (présentation au client) : `scripts/seed-demo.mjs` crée 12 services, 6 réalisations
+(+ 3 images chacune), 3 actualités, 3 événements, 7 postes d'équipe et 3 témoignages, tous marqués
+« Contenu d'exemple — à remplacer » / « Client exemple » / « Membre de l'équipe », avec des illustrations
+générées aux couleurs UPCOM. Il se connecte avec **votre compte super_admin** (e-mail et mot de passe
+demandés dans le terminal) : aucune clé secrète, la RLS s'applique. Aucun réseau social n'est créé.
+
+```bash
+npm run seed:demo:prod                 # base en ligne (lit .env.production.local)
+npm run seed:demo:prod -- --remove     # supprime uniquement ce contenu d'exemple et ses images
+```
 
 **Mise à jour du schéma** : après une migration backend, publier un nouveau tag de `upcom-backend`
 puis mettre à jour la dépendance `@upcom/supabase` (`github:ouzking/upcom-backend#vX.Y.Z`) et relancer
@@ -248,13 +260,13 @@ La CI (`.github/workflows/ci.yml`) exécute types, lint, tests et build à chaqu
 
 ## 10. Déploiement
 
-Application statique (`npm run build` → `dist/`), hébergeable sur Netlify, Vercel, Cloudflare Pages…
-
-1. Variables `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (+ `VITE_PUBLIC_SITE_URL`) dans l'hébergeur.
-2. Réécriture SPA : `public/_redirects` (Netlify / Cloudflare) ; sur Vercel, une règle `/(.*) → /index.html`.
-3. Supabase → *Authentication → URL Configuration* : **Site URL** = URL du back-office ; **Redirect
+Déployé sur **Netlify** : https://upcom-admin.netlify.app (projet Supabase `gopjiglltfohtzeqijsq`).
+`netlify.toml` définit le build, les variables **publiques** (URL + clé publishable), la réécriture SPA et
+les en-têtes de sécurité : chaque push sur `main` redéploie. Pour changer de projet Supabase, modifier ces
+variables (jamais de clé secrète dans ce fichier).
+1. Supabase → *Authentication → URL Configuration* : **Site URL** = URL du back-office ; **Redirect
    URLs** incluant `https://admin.<domaine>/**` (pages `/auth/accept-invite` et `/auth/reset-password`).
-4. Secrets des Edge Functions (backend) : `ADMIN_APP_URL=https://admin.<domaine>`,
+2. Secrets des Edge Functions (backend) : `ADMIN_APP_URL=https://admin.<domaine>`,
    `ADMIN_INVITE_REDIRECT_URL=https://admin.<domaine>/auth/accept-invite`, et l'origine du back-office dans
    `ALLOWED_ORIGINS`.
 
