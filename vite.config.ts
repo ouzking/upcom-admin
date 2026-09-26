@@ -35,6 +35,8 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     css: false,
     restoreMocks: true,
+    // Tests d'interface complets (saisie clavier, routeur, providers) : marge pour les machines chargées.
+    testTimeout: 20_000,
     // Valeurs factices : aucun appel réseau n'est effectué, les repositories sont simulés.
     env: {
       VITE_SUPABASE_URL: "http://127.0.0.1:54321",

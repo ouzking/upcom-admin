@@ -1,6 +1,9 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
+
+// findBy* / waitFor : 1 s par défaut, trop juste quand la machine est chargée.
+configure({ asyncUtilTimeout: 5000 });
 
 afterEach(() => {
   cleanup();
