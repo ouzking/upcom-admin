@@ -260,7 +260,7 @@ La CI (`.github/workflows/ci.yml`) exécute types, lint, tests et build à chaqu
 
 ## 10. Déploiement
 
-Déployé sur **Netlify** : https://upcom-admin.netlify.app (projet Supabase `gopjiglltfohtzeqijsq`).
+Déployé sur **Netlify** : https://admin.upcomagency.com (alias https://upcom-admin.netlify.app) (projet Supabase `gopjiglltfohtzeqijsq`).
 `netlify.toml` définit le build, les variables **publiques** (URL + clé publishable), la réécriture SPA et
 les en-têtes de sécurité : chaque push sur `main` redéploie. Pour changer de projet Supabase, modifier ces
 variables (jamais de clé secrète dans ce fichier).

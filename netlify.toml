@@ -1,5 +1,5 @@
 # =============================================================================
-# UPCOM ADMIN — déploiement Netlify (https://upcom-admin.netlify.app)
+# UPCOM ADMIN — déploiement Netlify (https://admin.upcomagency.com — alias https://upcom-admin.netlify.app)
 # -----------------------------------------------------------------------------
 # Les variables ci-dessous sont PUBLIQUES par nature (URL du projet + clé
 # publishable) : Vite les intègre au bundle envoyé au navigateur. La sécurité
@@ -15,7 +15,7 @@
   NODE_VERSION = "22"
   VITE_SUPABASE_URL = "https://gopjiglltfohtzeqijsq.supabase.co"
   VITE_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_7sz7_Mzej_DRrR1ru0_lIw_1NM69G3-"
-  VITE_PUBLIC_SITE_URL = "https://upcomagencyservice.netlify.app"
+  VITE_PUBLIC_SITE_URL = "https://www.upcomagency.com"
 
 # Application monopage : toutes les routes servent index.html.
 [[redirects]]
