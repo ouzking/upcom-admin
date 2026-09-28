@@ -1,4 +1,4 @@
-import { assertOk } from "@/lib/errors";
+import { assertOk, assertAffected } from "@/lib/errors";
 import { supabase } from "@/lib/supabase";
 import type { ContentStatus, ListParams, Page } from "@/types";
 
@@ -23,11 +23,11 @@ export interface ContentRepository<TRow, TListItem, TInput> {
 }
 
 export async function setContentStatus(table: ContentTable, id: string, status: ContentStatus): Promise<void> {
-  assertOk(await supabase.from(table).update({ status }).eq("id", id));
+  assertAffected(await supabase.from(table).update({ status }).eq("id", id).select("id"));
 }
 
 export async function deleteContent(table: ContentTable, id: string): Promise<void> {
-  assertOk(await supabase.from(table).delete().eq("id", id));
+  assertAffected(await supabase.from(table).delete().eq("id", id).select("id"));
 }
 
 export async function countContent(table: ContentTable, status?: ContentStatus): Promise<number> {

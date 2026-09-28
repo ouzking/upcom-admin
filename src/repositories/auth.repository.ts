@@ -1,5 +1,5 @@
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
-import { AppError, assertOk, toAppError } from "@/lib/errors";
+import { AppError, assertOk, toAppError, assertAffected } from "@/lib/errors";
 import { supabase } from "@/lib/supabase";
 import type { MyAccess, ProfileRow } from "@/types";
 
@@ -51,6 +51,6 @@ export const authRepository = {
   },
 
   async updateMyName(userId: string, fullName: string): Promise<void> {
-    assertOk(await supabase.from("profiles").update({ full_name: fullName.trim() || null }).eq("id", userId));
+    assertAffected(await supabase.from("profiles").update({ full_name: fullName.trim() || null }).eq("id", userId).select("id"));
   },
 };

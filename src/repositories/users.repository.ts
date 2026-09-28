@@ -1,5 +1,5 @@
 import { EDGE_FUNCTIONS } from "@upcom/supabase";
-import { assertOk, unwrap } from "@/lib/errors";
+import { unwrap, assertAffected } from "@/lib/errors";
 import { supabase } from "@/lib/supabase";
 import type { AdminInviteUserPayload, AdminInviteUserResult, AppRole, ProfileRow } from "@/types";
 import { invokeFunction } from "./functions";
@@ -28,15 +28,15 @@ export const usersRepository = {
   },
 
   async updateRole(id: string, role: AppRole | null): Promise<void> {
-    assertOk(await supabase.from("profiles").update({ role }).eq("id", id));
+    assertAffected(await supabase.from("profiles").update({ role }).eq("id", id).select("id"));
   },
 
   async setActive(id: string, isActive: boolean): Promise<void> {
-    assertOk(await supabase.from("profiles").update({ is_active: isActive }).eq("id", id));
+    assertAffected(await supabase.from("profiles").update({ is_active: isActive }).eq("id", id).select("id"));
   },
 
   async updateName(id: string, fullName: string): Promise<void> {
-    assertOk(await supabase.from("profiles").update({ full_name: fullName.trim() || null }).eq("id", id));
+    assertAffected(await supabase.from("profiles").update({ full_name: fullName.trim() || null }).eq("id", id).select("id"));
   },
 
   invite: (payload: AdminInviteUserPayload) =>

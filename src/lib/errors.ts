@@ -17,6 +17,10 @@ export class AppError extends Error {
 
 export const GENERIC_ERROR = "Une erreur est survenue.";
 
+/** Une écriture n'a touché aucune ligne : la RLS l'a filtrée, ou l'élément n'existe plus. */
+export const NOT_FOUND_OR_FORBIDDEN =
+  "Modification impossible : cet élément n'existe plus ou votre rôle ne permet pas de le modifier.";
+
 interface ErrorLike {
   code?: string | number;
   message?: string;
@@ -67,13 +71,31 @@ export function toAppError(error: unknown): AppError {
   if (code === "23503") {
     return new AppError("Cet élément est utilisé ailleurs et ne peut pas être supprimé.", { code, cause: error });
   }
-  if (code === "PGRST116") return new AppError("Élément introuvable.", { code: "not_found", cause: error });
+  // PGRST116 après un UPDATE … select().single() : aucune ligne modifiée = élément absent OU refusé par la RLS.
+  if (code === "PGRST116") return new AppError("Élément introuvable, ou votre rôle ne permet pas d'y accéder ou de le modifier.", { code: "not_found", cause: error });
   if (status === 413 || /exceeded the maximum allowed size|too large/i.test(text)) {
     return new AppError("Le fichier dépasse la taille maximale autorisée.", { code: "file_too_large", cause: error });
   }
   if (/mime type|invalid_mime_type/i.test(text)) {
     return new AppError("Ce type de fichier n'est pas autorisé.", { code: "invalid_mime", cause: error });
   }
+  // Supabase Auth (codes officiels + messages anglais) → français.
+  const authCode = `${code ?? ""} ${text}`;
+  const AUTH_MESSAGES: [RegExp, string, string][] = [
+    [/same_password|should be different from the old/i, "same_password", "Le nouveau mot de passe doit être différent de l'ancien."],
+    [/weak_password|Password should (be|contain)|password.*(characters|weak)/i, "weak_password", "Mot de passe trop faible : au moins 12 caractères, avec des minuscules, des majuscules et des chiffres."],
+    [/reauthentication/i, "reauthentication_needed", "Pour des raisons de sécurité, déconnectez-vous puis reconnectez-vous avant de changer votre mot de passe."],
+    [/over_email_send_rate_limit|you can only request this after/i, "rate_limited", "Trop de demandes : patientez une minute avant de réessayer."],
+    [/email rate limit exceeded|over_request_rate_limit/i, "rate_limited", "Limite d'envoi d'e-mails atteinte. Réessayez un peu plus tard."],
+    [/Auth session missing|session_not_found|refresh_token_not_found|Invalid Refresh Token|JWT expired|PGRST30[13]/i, "session_expired", "Votre session a expiré. Reconnectez-vous (ou rouvrez le lien reçu par e-mail)."],
+    [/otp_expired|Email link is invalid or has expired|Token has expired/i, "link_expired", "Ce lien a expiré ou a déjà été utilisé. Demandez un nouvel e-mail."],
+    [/signup_disabled|Signups not allowed/i, "signup_disabled", "Les inscriptions sont fermées : l'accès se fait uniquement sur invitation."],
+    [/email_provider_disabled|Email logins are disabled/i, "email_disabled", "La connexion par e-mail est désactivée sur le serveur (réglage Supabase à activer)."],
+    [/user_banned/i, "user_banned", "Ce compte est suspendu."],
+  ];
+  const authMatch = AUTH_MESSAGES.find(([pattern]) => pattern.test(authCode));
+  if (authMatch) return new AppError(authMatch[2], { code: authMatch[1], cause: error });
+
   if (/Invalid login credentials/i.test(text)) {
     return new AppError("Adresse e-mail ou mot de passe incorrect.", { code: "invalid_credentials", cause: error });
   }
@@ -97,4 +119,14 @@ export function unwrap<T>(result: { data: T; error: unknown }): NonNullable<T> {
 
 export function assertOk(result: { error: unknown }): void {
   if (result.error) throw toAppError(result.error);
+}
+
+/**
+ * Pour UPDATE / DELETE : la RLS ne renvoie pas d'erreur quand elle filtre les lignes,
+ * elle modifie simplement 0 ligne. On exige donc au moins une ligne affectée
+ * (requête terminée par `.select("id")`), sinon on signale un refus explicite.
+ */
+export function assertAffected(result: { data: unknown[] | null; error: unknown }): void {
+  if (result.error) throw toAppError(result.error);
+  if (!result.data?.length) throw new AppError(NOT_FOUND_OR_FORBIDDEN, { code: "forbidden" });
 }

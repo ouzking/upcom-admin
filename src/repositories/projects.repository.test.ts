@@ -31,7 +31,8 @@ describe("syncProjectGallery (réalisation → project_images)", () => {
           ? { data: [row("img-1", "projects/p-1/a.webp", 0), row("img-2", "projects/p-1/b.webp", 1)], error: null }
           : { data: [row("img-2", "projects/p-1/b.webp", 0), row("img-3", "projects/p-1/c.webp", 1)], error: null };
       }
-      return { data: null, error: null };
+      // Écritures : la ligne affectée est renvoyée (`.select("id")`).
+      return { data: [{ id: "affected" }], error: null };
     });
     mock.current = supabase.client;
   });
@@ -54,6 +55,12 @@ describe("syncProjectGallery (réalisation → project_images)", () => {
     ]);
     // La galerie renvoyée contient les identifiants des nouvelles images (évite les doublons au prochain enregistrement).
     expect(result.map((image) => image.id)).toEqual(["img-2", "img-3"]);
+  });
+
+  it("signale une suppression filtrée par la RLS (0 ligne affectée)", async () => {
+    supabase = createSupabaseMock((call) => (call.operation === "delete" ? { data: [], error: null } : { data: [row("img-1", "a", 0)], error: null }));
+    mock.current = supabase.client;
+    await expect(syncProjectGallery("p-1", [])).rejects.toThrow(/votre rôle ne permet pas/);
   });
 
   it("propage une erreur RLS", async () => {

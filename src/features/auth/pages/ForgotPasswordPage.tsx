@@ -25,7 +25,8 @@ export default function ForgotPasswordPage() {
   const onSubmit = handleSubmit(async ({ email }) => {
     setFormError(null);
     try {
-      await authRepository.requestPasswordReset(email, `${window.location.origin}/auth/reset-password`);
+      // Même page que les invitations (URL autorisée côté Supabase) : elle détecte le type « recovery ».
+      await authRepository.requestPasswordReset(email, `${window.location.origin}/auth/accept-invite`);
       setSent(true);
     } catch (error) {
       setFormError(errorMessage(error));

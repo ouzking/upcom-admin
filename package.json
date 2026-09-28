@@ -12,7 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "seed:demo": "node --env-file-if-exists=.env.local scripts/seed-demo.mjs",
-    "seed:demo:prod": "node --env-file=.env.production.local scripts/seed-demo.mjs"
+    "seed:demo:prod": "node --env-file=.env.production.local scripts/seed-demo.mjs",
+    "recette": "node --env-file-if-exists=.env.local scripts/recette.mjs",
+    "recette:prod": "node --env-file=.env.production.local scripts/recette.mjs"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",

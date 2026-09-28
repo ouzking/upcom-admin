@@ -13,6 +13,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { cn } from "@/lib/cn";
 import { errorMessage } from "@/lib/errors";
 import { AuthLayout } from "@/layouts/AuthLayout";
+import { authLinkErrorMessage, initialAuthLink } from "@/lib/authLink";
 import { authRepository } from "@/repositories/auth.repository";
 import { useAuth } from "../auth-context";
 import { PASSWORD_RULES, passwordSchema } from "../password";
@@ -30,33 +31,37 @@ const schema = z
 type Values = z.infer<typeof schema>;
 
 /**
- * Définition du mot de passe après un lien e-mail :
- * - « invite » : /auth/accept-invite (ADMIN_INVITE_REDIRECT_URL du backend)
- * - « reset »  : /auth/reset-password (mot de passe oublié)
- * La session est ouverte automatiquement par Supabase à partir du jeton de l'URL.
+ * Définition du mot de passe après un lien reçu par e-mail.
+ *
+ * Supabase renvoie invitations ET « mot de passe oublié » vers /auth/accept-invite
+ * (ADMIN_INVITE_REDIRECT_URL) : le type réel est lu dans le lien (#type=invite|recovery)
+ * ou déduit de l'événement PASSWORD_RECOVERY. La session présente dans l'URL est
+ * ouverte automatiquement par supabase-js (detectSessionInUrl).
  */
-export default function SetPasswordPage({ mode }: { mode: Mode }) {
-  const { status, session } = useAuth();
+export default function SetPasswordPage({ mode: routeMode }: { mode: Mode }) {
+  const { status, session, isRecovery } = useAuth();
+  const mode: Mode = initialAuthLink.type === "recovery" || isRecovery ? "reset" : initialAuthLink.type === "invite" ? "invite" : routeMode;
   const title = mode === "invite" ? "Activez votre compte" : "Nouveau mot de passe";
+  const linkError = authLinkErrorMessage(initialAuthLink);
 
   if (status === "loading") {
     return (
       <AuthLayout title={title}>
-        <div className="flex items-center gap-3 text-sm text-muted">
+        <div className="flex items-center gap-3 text-sm text-muted" role="status">
           <Spinner className="text-brand" /> Vérification du lien…
         </div>
       </AuthLayout>
     );
   }
 
-  if (!session) {
+  if (!session || linkError) {
     return (
-      <AuthLayout title="Lien invalide ou expiré" description="Ce lien a déjà été utilisé ou n'est plus valide.">
-        <div className="flex items-start gap-3 rounded-2xl border border-line bg-mist p-5 text-sm text-ink-soft">
+      <AuthLayout title="Lien invalide ou expiré" description={linkError ?? "Ce lien a déjà été utilisé ou n'est plus valide."}>
+        <div className="flex items-start gap-3 rounded-2xl border border-line bg-mist p-5 text-sm text-ink-soft" role="alert">
           <LinkIcon className="mt-0.5 size-5 shrink-0 text-muted" aria-hidden />
           {mode === "invite"
-            ? "Demandez à un administrateur de vous renvoyer une invitation."
-            : "Refaites une demande de réinitialisation du mot de passe."}
+            ? "Demandez à un administrateur de vous renvoyer une invitation depuis la page Utilisateurs."
+            : "Refaites une demande de réinitialisation du mot de passe : le nouveau lien sera valable une fois."}
         </div>
         <Link to={mode === "invite" ? "/login" : "/auth/forgot-password"} className="mt-6 inline-block text-sm font-semibold text-brand-bright hover:underline">
           {mode === "invite" ? "Aller à la connexion" : "Nouvelle demande"}
@@ -71,7 +76,7 @@ export default function SetPasswordPage({ mode }: { mode: Mode }) {
       description={
         mode === "invite"
           ? `Choisissez votre mot de passe pour ${session.user.email ?? "votre compte"}.`
-          : "Choisissez un mot de passe robuste que vous n'utilisez nulle part ailleurs."
+          : `Choisissez un nouveau mot de passe pour ${session.user.email ?? "votre compte"}.`
       }
     >
       <SetPasswordForm mode={mode} session={session} />

@@ -1,4 +1,4 @@
-import { assertOk, unwrap } from "@/lib/errors";
+import { assertOk, unwrap, assertAffected } from "@/lib/errors";
 import { supabase } from "@/lib/supabase";
 import type { SiteSettingsRow, SiteSettingsUpdate, SocialLinkInsert, SocialLinkRow } from "@/types";
 
@@ -23,9 +23,9 @@ export const socialLinksRepository = {
     assertOk(await supabase.from("social_links").insert(input));
   },
   async update(id: string, input: Partial<SocialLinkInput>): Promise<void> {
-    assertOk(await supabase.from("social_links").update(input).eq("id", id));
+    assertAffected(await supabase.from("social_links").update(input).eq("id", id).select("id"));
   },
   async remove(id: string): Promise<void> {
-    assertOk(await supabase.from("social_links").delete().eq("id", id));
+    assertAffected(await supabase.from("social_links").delete().eq("id", id).select("id"));
   },
 };

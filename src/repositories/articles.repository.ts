@@ -1,4 +1,4 @@
-import { assertOk, unwrap } from "@/lib/errors";
+import { unwrap, assertAffected } from "@/lib/errors";
 import { pageRange, searchFilter, toPage } from "@/lib/query";
 import { supabase } from "@/lib/supabase";
 import type { ArticleCategoryRow, ArticleInsert, ArticleRow } from "@/types";
@@ -47,9 +47,9 @@ export const articleCategoriesRepository = {
     return unwrap(await supabase.from("article_categories").insert({ name: name.trim() }).select("*").single());
   },
   async rename(id: string, name: string): Promise<void> {
-    assertOk(await supabase.from("article_categories").update({ name: name.trim() }).eq("id", id));
+    assertAffected(await supabase.from("article_categories").update({ name: name.trim() }).eq("id", id).select("id"));
   },
   async remove(id: string): Promise<void> {
-    assertOk(await supabase.from("article_categories").delete().eq("id", id));
+    assertAffected(await supabase.from("article_categories").delete().eq("id", id).select("id"));
   },
 };

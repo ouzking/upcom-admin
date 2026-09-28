@@ -1,5 +1,5 @@
 import { EDGE_FUNCTIONS } from "@upcom/supabase";
-import { assertOk, unwrap } from "@/lib/errors";
+import { assertOk, unwrap, assertAffected } from "@/lib/errors";
 import { pageRange, searchFilter, toPage } from "@/lib/query";
 import { supabase } from "@/lib/supabase";
 import type { ContactMessageRow, ContactMessageUpdate, ContactStatus, ListParams, Page, SendNotificationResult } from "@/types";
@@ -41,11 +41,11 @@ export const messagesRepository = {
 
   /** Seules les colonnes de suivi sont modifiables (privilèges par colonne en base). */
   async update(id: string, changes: ContactMessageUpdate): Promise<void> {
-    assertOk(await supabase.from("contact_messages").update(changes).eq("id", id));
+    assertAffected(await supabase.from("contact_messages").update(changes).eq("id", id).select("id"));
   },
 
   async remove(id: string): Promise<void> {
-    assertOk(await supabase.from("contact_messages").delete().eq("id", id));
+    assertAffected(await supabase.from("contact_messages").delete().eq("id", id).select("id"));
   },
 
   resendNotification: (id: string) => invokeFunction<SendNotificationResult>(EDGE_FUNCTIONS.sendContactNotification, { id, force: true }),

@@ -68,6 +68,15 @@ celui attendu par la configuration Auth du backend (`site_url`, redirections, `A
 | `npm run lint` | ESLint (règles React Hooks / React Compiler, `no-explicit-any`) |
 | `npm test` | tests Vitest |
 | `npm run seed:demo` / `seed:demo:prod` | contenu d'exemple (base locale / en ligne) — voir ci-dessous |
+| `npm run recette` / `recette:prod` | recette automatisée des parcours (base locale / en ligne) — voir ci-dessous |
+
+**Recette automatisée** (`scripts/recette.mjs`) : avec votre session super_admin (identifiants demandés dans le
+terminal), rejoue connexion, droits (`get_my_access`), refus RLS d'un visiteur, cycle complet
+créer → modifier → publier → archiver → supprimer d'un service, d'une réalisation avec galerie, d'une
+actualité et d'un événement (upload dans le bon bucket, visibilité publique vérifiée), réception d'une
+demande de devis et d'un message comme depuis le site (Edge Functions) puis statut / attribution / note,
+et en option l'invitation (`-- --invite adresse@…`, envoie un vrai e-mail). Tout est préfixé `[RECETTE]`
+et supprimé à la fin, même en cas d'échec.
 
 **Contenu d'exemple** (présentation au client) : `scripts/seed-demo.mjs` crée 12 services, 6 réalisations
 (+ 3 images chacune), 3 actualités, 3 événements, 7 postes d'équipe et 3 témoignages, tous marqués
@@ -97,7 +106,9 @@ Uniquement des valeurs **publiques** (tout ce qui commence par `VITE_` est visib
 > ⛔ La `service_role` / clé secrète ne doit **jamais** figurer dans ce dépôt ni dans une variable
 > `VITE_*`. Les opérations qui l'exigent (invitations) passent par les Edge Functions du backend.
 
-Sans configuration, l'application affiche un écran explicite au lieu de planter.
+**Vérifications** : aucune adresse n'est codée en dur. Au démarrage, une configuration absente, une adresse
+locale (`localhost` / `127.0.0.1`) dans un build de production ou une clé secrète affichent un écran explicite
+(aucune requête n'est envoyée). Sur Netlify et en CI, un tel build **échoue** (`vite.config.ts`).
 
 ## 4. Audit du backend utilisé
 
@@ -161,10 +172,11 @@ Comportement de l'interface :
 
 | Écran | Contenu |
 |---|---|
-| **Connexion** | e-mail / mot de passe, mot de passe oublié, activation d'invitation (`/auth/accept-invite`), réinitialisation (`/auth/reset-password`), session persistante |
+| **Connexion** | e-mail / mot de passe, mot de passe oublié, session persistante ; `/auth/accept-invite` traite **invitations et réinitialisations** (type lu dans le lien, lien expiré expliqué), messages Supabase Auth traduits |
 | **Tableau de bord** | « Bonjour, [prénom] », indicateurs (services publiés, réalisations, articles, événements, devis, messages), dernières demandes, notifications, derniers contenus, activité récente, raccourcis de création |
 | **Services, Réalisations, Actualités, Événements, Équipe, Témoignages** | liste (recherche, filtres statut / catégorie / mise en avant, pagination, état dans l'URL) ; création, modification, publication, dépublication, archivage, restauration, suppression d'un contenu archivé ; garde « modifications non enregistrées » |
 | Réalisations | image principale + **galerie** (upload multiple, glisser-déposer, réordonnancement, texte alternatif, légende) |
+| Images | **optimisées avant l'envoi** : côté le plus long ≤ 2400 px, WebP (une photo de smartphone de plusieurs Mo passe sous les limites des buckets) |
 | Actualités | **éditeur de contenu** (barre d'outils, raccourcis, aperçu fidèle au site, compteur de mots), catégories, signature, **publication programmée** |
 | **Demandes de devis** | compteurs par statut, fiche détaillée, pipeline Nouveau → En cours → Contacté → Converti / Clôturé, assignation, notes internes, réponse e-mail / appel, renvoi de la notification |
 | **Messages** | boîte de réception à deux volets, lu / non lu (lecture automatique), répondu, archivage, notes internes |

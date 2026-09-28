@@ -1,5 +1,5 @@
 import { EDGE_FUNCTIONS } from "@upcom/supabase";
-import { assertOk, unwrap } from "@/lib/errors";
+import { assertOk, unwrap, assertAffected } from "@/lib/errors";
 import { pageRange, searchFilter, toPage } from "@/lib/query";
 import { supabase } from "@/lib/supabase";
 import type { ListParams, Page, ProfileRow, QuoteRequestRow, QuoteRequestUpdate, QuoteStatus, SendNotificationResult, ServiceRow } from "@/types";
@@ -51,11 +51,11 @@ export const quotesRepository = {
 
   /** Seules les colonnes de suivi sont modifiables (privilèges par colonne en base). */
   async update(id: string, changes: QuoteRequestUpdate): Promise<void> {
-    assertOk(await supabase.from("quote_requests").update(changes).eq("id", id));
+    assertAffected(await supabase.from("quote_requests").update(changes).eq("id", id).select("id"));
   },
 
   async remove(id: string): Promise<void> {
-    assertOk(await supabase.from("quote_requests").delete().eq("id", id));
+    assertAffected(await supabase.from("quote_requests").delete().eq("id", id).select("id"));
   },
 
   resendNotification: (id: string) => invokeFunction<SendNotificationResult>(EDGE_FUNCTIONS.sendQuoteNotification, { id, force: true }),

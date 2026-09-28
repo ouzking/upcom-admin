@@ -1,4 +1,4 @@
-import { assertOk, unwrap } from "@/lib/errors";
+import { assertOk, unwrap, assertAffected } from "@/lib/errors";
 import { pageRange, searchFilter, toPage } from "@/lib/query";
 import { supabase } from "@/lib/supabase";
 import type { ProjectImageRow, ProjectInsert, ProjectRow, ServiceCategoryRow } from "@/types";
@@ -69,7 +69,7 @@ export async function syncProjectGallery(projectId: string, items: GalleryItem[]
   const keptIds = new Set(items.flatMap((item) => (item.id ? [item.id] : [])));
   const removedIds = current.filter((image) => !keptIds.has(image.id)).map((image) => image.id);
 
-  if (removedIds.length) assertOk(await supabase.from("project_images").delete().in("id", removedIds));
+  if (removedIds.length) assertAffected(await supabase.from("project_images").delete().in("id", removedIds).select("id"));
 
   const existing = items
     .map((item, index) => ({ item, index }))

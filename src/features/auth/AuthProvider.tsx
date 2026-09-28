@@ -51,6 +51,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const unsubscribe = authRepository.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") setIsRecovery(true);
+      // Mot de passe redéfini : fin du parcours de récupération.
+      if (event === "USER_UPDATED") setIsRecovery(false);
       if (event === "SIGNED_OUT") {
         queryClient.clear();
         setIsRecovery(false);
