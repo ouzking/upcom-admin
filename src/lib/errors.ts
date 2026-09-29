@@ -102,6 +102,9 @@ export function toAppError(error: unknown): AppError {
   if (/Email not confirmed/i.test(text)) {
     return new AppError("Votre adresse e-mail n'a pas encore été confirmée.", { code: "email_not_confirmed", cause: error });
   }
+  if ([502, 503, 504].includes(status) || /Gateway Time-?out|Bad Gateway|Service Unavailable/i.test(text)) {
+    return new AppError("Le serveur met trop de temps à répondre. Réessayez dans un instant.", { code: "timeout", cause: error });
+  }
   if (/Failed to fetch|NetworkError|network/i.test(text)) {
     return new AppError("Connexion au serveur impossible. Vérifiez votre connexion Internet.", { code: "network", cause: error });
   }

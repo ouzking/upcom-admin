@@ -137,7 +137,14 @@ let imageSeed = 1;
 async function uploadImage(bucket, folder, name, options) {
   const buffer = await illustration({ seed: imageSeed++, ...options });
   const path = buildStoragePath(folder, `${name}.webp`);
-  check(await supabase.storage.from(bucket).upload(path, buffer, { contentType: "image/webp", upsert: false }), `upload ${bucket}/${path}`);
+  // Délai serveur passager (502/503/504) : nouvelle tentative sur le même chemin.
+  for (let attempt = 1; ; attempt += 1) {
+    const { error } = await supabase.storage.from(bucket).upload(path, buffer, { contentType: "image/webp", upsert: attempt > 1 });
+    if (!error) break;
+    const transient = [502, 503, 504].includes(Number(error.status ?? error.statusCode)) || /time-?out/i.test(error.message ?? "");
+    if (attempt >= 3 || !transient) check({ data: null, error }, `upload ${bucket}/${path}`);
+    await new Promise((resolve) => setTimeout(resolve, attempt * 1500));
+  }
   count("images");
   return path;
 }

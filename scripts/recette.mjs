@@ -84,14 +84,48 @@ const image = (label) =>
     .webp({ quality: 80 })
     .toBuffer();
 
+const isTransient = (error) => [502, 503, 504].includes(Number(error?.status ?? error?.statusCode)) || /gateway time-?out|timed? ?out|fetch failed/i.test(String(error?.message ?? ""));
+
+/** Envoi avec nouvelles tentatives sur le MÊME chemin (un 504 peut survenir alors que le fichier est enregistré). */
+async function putFile(client, bucket, path, body, contentType) {
+  for (let attempt = 1; ; attempt += 1) {
+    const { error } = await client.storage.from(bucket).upload(path, body, { contentType, upsert: attempt > 1 });
+    if (!error) return attempt;
+    if (attempt >= 3 || !isTransient(error)) throw new Error(`upload ${bucket} : ${error.statusCode ?? error.status ?? ""} ${error.message}`.trim());
+    await new Promise((resolve) => setTimeout(resolve, attempt * 1500));
+  }
+}
+
 async function upload(bucket, folder, label) {
   const path = buildStoragePath(folder, "recette.webp");
-  ok(await supabase.storage.from(bucket).upload(path, await image(label), { contentType: "image/webp" }), `upload ${bucket}`);
+  // Nettoyage enregistré AVANT l'envoi : même un envoi « en échec » est supprimé à la fin.
   cleanup.push(async () => supabase.storage.from(bucket).remove([path]));
+  const attempts = await putFile(supabase, bucket, path, await image(label), "image/webp");
+  if (attempts > 1) console.log(`    ↻ ${bucket} : envoi réussi à la tentative ${attempts} (délai serveur passager)`);
   // Lisible publiquement (bucket public) ?
   const response = await fetch(`${url}/storage/v1/object/public/${bucket}/${path.split("/").map(encodeURIComponent).join("/")}`);
   if (!response.ok) throw new Error(`image non accessible publiquement (${response.status})`);
   return path;
+}
+
+/** Supprime les fichiers de recette orphelins d'exécutions précédentes (ex. envoi interrompu). */
+async function sweepOrphans() {
+  let removed = 0;
+  for (const bucket of ["services", "projects", "articles", "events"]) {
+    const { data: folders } = await supabase.storage.from(bucket).list(bucket, { limit: 1000 });
+    for (const folder of folders ?? []) {
+      if (folder.id) continue;
+      for (const prefix of [`${bucket}/${folder.name}`, `${bucket}/${folder.name}/galerie`]) {
+        const { data: files } = await supabase.storage.from(bucket).list(prefix, { limit: 1000 });
+        const orphans = (files ?? []).filter((file) => file.id && file.name.endsWith("-recette.webp")).map((file) => `${prefix}/${file.name}`);
+        if (orphans.length) {
+          const { data } = await supabase.storage.from(bucket).remove(orphans);
+          removed += data?.length ?? 0;
+        }
+      }
+    }
+  }
+  return removed;
 }
 
 /** Cycle complet d'un contenu : créer (brouillon) → modifier → publier → visible publiquement → supprimer. */
@@ -237,8 +271,11 @@ async function main() {
 try {
   await main();
 } finally {
-  // Nettoyage systématique, dans l'ordre inverse.
+  // Nettoyage systématique, dans l'ordre inverse, puis fichiers orphelins d'anciennes exécutions.
   for (const task of cleanup.reverse()) await task().catch(() => undefined);
+  const orphans = await sweepOrphans().catch(() => 0);
+  if (orphans) console.log(`
+  🧹 ${orphans} fichier(s) de recette orphelin(s) supprimé(s).`);
   await supabase.auth.signOut().catch(() => undefined);
   const failed = results.filter((result) => !result.ok);
   console.log(`\n──────── ${results.length - failed.length}/${results.length} parcours réussis ────────`);
