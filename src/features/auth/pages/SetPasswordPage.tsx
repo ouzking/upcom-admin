@@ -4,19 +4,20 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router";
 import type { Session } from "@supabase/supabase-js";
 import { z } from "zod";
-import { Check, KeyRound, LinkIcon } from "lucide-react";
+import { KeyRound, LinkIcon } from "lucide-react";
 import { useToast } from "@/components/feedback/toast-context";
 import { Field } from "@/components/forms/Field";
 import { Button } from "@/components/ui/Button";
 import { Input, PasswordInput } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
-import { cn } from "@/lib/cn";
 import { errorMessage } from "@/lib/errors";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { authLinkErrorMessage, initialAuthLink } from "@/lib/authLink";
 import { authRepository } from "@/repositories/auth.repository";
-import { useAuth } from "../auth-context";
-import { PASSWORD_RULES, passwordSchema } from "../password";
+import { ACCESS_NOTICE_MESSAGES, useAuth } from "../auth-context";
+import { passwordSchema } from "../password";
+import { PasswordStrength } from "../PasswordStrength";
+import { ResetLinkForm } from "../ResetLinkForm";
 
 type Mode = "invite" | "reset";
 
@@ -39,7 +40,7 @@ type Values = z.infer<typeof schema>;
  * ouverte automatiquement par supabase-js (detectSessionInUrl).
  */
 export default function SetPasswordPage({ mode: routeMode }: { mode: Mode }) {
-  const { status, session, isRecovery } = useAuth();
+  const { status, session, isRecovery, notice } = useAuth();
   const mode: Mode = initialAuthLink.type === "recovery" || isRecovery ? "reset" : initialAuthLink.type === "invite" ? "invite" : routeMode;
   const title = mode === "invite" ? "Activez votre compte" : "Nouveau mot de passe";
   const linkError = authLinkErrorMessage(initialAuthLink);
@@ -54,17 +55,30 @@ export default function SetPasswordPage({ mode: routeMode }: { mode: Mode }) {
     );
   }
 
+  // Lien valide mais compte sans rôle / désactivé : la session a été fermée par sécurité.
+  if (!session && notice) {
+    return (
+      <AuthLayout title="Accès non autorisé">
+        <p className="rounded-2xl border border-warning/25 bg-warning-50 p-5 text-sm text-ink-soft" role="alert">
+          {ACCESS_NOTICE_MESSAGES[notice]}
+        </p>
+        <Link to="/login" className="mt-6 inline-block text-sm font-semibold text-brand-bright hover:underline">
+          Retour à la connexion
+        </Link>
+      </AuthLayout>
+    );
+  }
+
   if (!session || linkError) {
     return (
-      <AuthLayout title="Lien invalide ou expiré" description={linkError ?? "Ce lien a déjà été utilisé ou n'est plus valide."}>
-        <div className="flex items-start gap-3 rounded-2xl border border-line bg-mist p-5 text-sm text-ink-soft" role="alert">
+      <AuthLayout title="Lien expiré ou déjà utilisé" description={linkError ?? "Ce lien n'est plus valide : il a peut-être déjà servi ou dépassé sa durée de validité."}>
+        <div className="mb-6 flex items-start gap-3 rounded-2xl border border-line bg-mist p-4 text-sm text-ink-soft" role="alert">
           <LinkIcon className="mt-0.5 size-5 shrink-0 text-muted" aria-hidden />
-          {mode === "invite"
-            ? "Demandez à un administrateur de vous renvoyer une invitation depuis la page Utilisateurs."
-            : "Refaites une demande de réinitialisation du mot de passe : le nouveau lien sera valable une fois."}
+          Indiquez votre adresse e-mail : vous recevrez un nouveau lien pour {mode === "invite" ? "activer votre compte" : "choisir votre mot de passe"}.
         </div>
-        <Link to={mode === "invite" ? "/login" : "/auth/forgot-password"} className="mt-6 inline-block text-sm font-semibold text-brand-bright hover:underline">
-          {mode === "invite" ? "Aller à la connexion" : "Nouvelle demande"}
+        <ResetLinkForm />
+        <Link to="/login" className="mt-8 inline-block text-sm font-semibold text-brand-bright hover:underline">
+          Retour à la connexion
         </Link>
       </AuthLayout>
     );
@@ -129,17 +143,7 @@ function SetPasswordForm({ mode, session }: { mode: Mode; session: Session }) {
       <Field label="Nouveau mot de passe" error={errors.password?.message}>
         <PasswordInput autoComplete="new-password" {...register("password")} />
       </Field>
-      <ul className="grid grid-cols-2 gap-1.5 text-[13px]" aria-label="Règles du mot de passe">
-        {PASSWORD_RULES.map((rule) => {
-          const ok = rule.test(password);
-          return (
-            <li key={rule.label} className={cn("flex items-center gap-1.5", ok ? "text-success" : "text-muted")}>
-              <Check className={cn("size-3.5", ok ? "opacity-100" : "opacity-30")} aria-hidden />
-              {rule.label}
-            </li>
-          );
-        })}
-      </ul>
+      <PasswordStrength value={password} />
       <Field label="Confirmation" error={errors.confirm?.message}>
         <PasswordInput autoComplete="new-password" {...register("confirm")} />
       </Field>

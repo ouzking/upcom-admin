@@ -41,7 +41,7 @@ function ArticleForm({ editor, initial }: { editor: ContentEditor<ArticleRow, Ar
   });
   const { register, control, formState } = form;
   const { errors } = formState;
-  const [title, excerpt, publishedAtInput] = useWatch({ control, name: ["title", "excerpt", "published_at"] });
+  const [title, excerpt, publishedAtInput, content, coverPath, authorName, categoryId] = useWatch({ control, name: ["title", "excerpt", "published_at", "content", "cover_image_path", "author_name", "category_id"] });
   const { submit, currentStatus, isSaving, isDirty } = useEditorSubmit(editor, form, articleToInput, articleToValues);
   const slug = useSlugSync(form, "title", "slug", editor.isNew);
 
@@ -63,6 +63,7 @@ function ArticleForm({ editor, initial }: { editor: ContentEditor<ArticleRow, Ar
         isSaving={isSaving}
         isDirty={isDirty}
         onSubmit={submit}
+        preview={{ bucket: resource.bucket, title, excerpt, body: content, imagePath: coverPath, eyebrow: categories.data?.find((category) => category.id === categoryId)?.name ?? "Actualité", meta: [{ icon: "date" as const, text: `${publishedAt ? formatDateTime(publishedAt) : "Date de publication"}${authorName ? ` · ${authorName}` : ""}` }] }}
         main={
           <>
             <FormSection title="Article">

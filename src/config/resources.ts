@@ -12,6 +12,10 @@ export interface ContentResource {
   createdMessage: string;
   path: string;
   bucket: StorageBucket;
+  /** Colonne de l'image principale (chemin dans le bucket). */
+  imageColumn: string;
+  /** La rubrique a une colonne display_order (ordre réglable par glisser-déposer). */
+  orderable: boolean;
   permission: AppPermission;
   icon: LucideIcon;
 }
@@ -25,6 +29,8 @@ export const CONTENT_RESOURCES: Record<ContentTable, ContentResource> = {
     createdMessage: "Service créé avec succès.",
     path: "/services",
     bucket: "services",
+    imageColumn: "image_path",
+    orderable: true,
     permission: "services.manage",
     icon: BriefcaseBusiness,
   },
@@ -35,6 +41,8 @@ export const CONTENT_RESOURCES: Record<ContentTable, ContentResource> = {
     createdMessage: "Réalisation créée avec succès.",
     path: "/realisations",
     bucket: "projects",
+    imageColumn: "cover_image_path",
+    orderable: true,
     permission: "projects.manage",
     icon: FolderKanban,
   },
@@ -45,6 +53,8 @@ export const CONTENT_RESOURCES: Record<ContentTable, ContentResource> = {
     createdMessage: "Article créé avec succès.",
     path: "/actualites",
     bucket: "articles",
+    imageColumn: "cover_image_path",
+    orderable: false,
     permission: "articles.manage",
     icon: Newspaper,
   },
@@ -55,6 +65,8 @@ export const CONTENT_RESOURCES: Record<ContentTable, ContentResource> = {
     createdMessage: "Événement créé avec succès.",
     path: "/evenements",
     bucket: "events",
+    imageColumn: "cover_image_path",
+    orderable: false,
     permission: "events.manage",
     icon: CalendarDays,
   },
@@ -65,6 +77,8 @@ export const CONTENT_RESOURCES: Record<ContentTable, ContentResource> = {
     createdMessage: "Membre ajouté avec succès.",
     path: "/equipe",
     bucket: "team",
+    imageColumn: "photo_path",
+    orderable: true,
     permission: "team.manage",
     icon: UsersRound,
   },
@@ -75,6 +89,8 @@ export const CONTENT_RESOURCES: Record<ContentTable, ContentResource> = {
     createdMessage: "Témoignage créé avec succès.",
     path: "/temoignages",
     bucket: "testimonials",
+    imageColumn: "photo_path",
+    orderable: true,
     permission: "testimonials.manage",
     icon: MessageSquareQuote,
   },

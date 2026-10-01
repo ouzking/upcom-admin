@@ -101,12 +101,22 @@ export const mediaRepository = {
     }
   },
 
+  /**
+   * Supprime une ancienne image REMPLACÉE, uniquement si elle appartient au dossier du
+   * contenu (`<bucket>/<id>/…`) : une image choisie dans la médiathèque peut servir
+   * ailleurs et n'est jamais supprimée. Échec silencieux (nettoyage non bloquant).
+   */
+  async removeReplaced(bucket: StorageBucket, ownerFolder: string, previous: string | null | undefined, next: string | null | undefined): Promise<void> {
+    if (!previous || previous === next || !previous.startsWith(`${ownerFolder.replace(/\/+$/, "")}/`)) return;
+    await supabase.storage.from(bucket).remove([previous]).catch(() => undefined);
+  },
+
   async remove(bucket: StorageBucket, paths: string[]): Promise<void> {
     if (!paths.length) return;
     const { data, error } = await supabase.storage.from(bucket).remove(paths);
     assertOk({ error });
     // Storage renvoie la liste des objets réellement supprimés : une liste vide
     // signifie que la policy a refusé l'opération.
-    if (!data?.length) throw new AppError("Vous n'avez pas les droits nécessaires pour supprimer ce fichier.", { code: "forbidden" });
+    if (!data?.length) throw new AppError("Vous n'avez pas les droits pour supprimer ce fichier.", { code: "forbidden" });
   },
 };

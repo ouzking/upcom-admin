@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { Archive, ArchiveRestore, Eye, EyeOff, MoreHorizontal, Save, Trash2 } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Archive, ArchiveRestore, Eye, EyeOff, MoreHorizontal, Save, ScanEye, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useConfirm } from "@/components/feedback/confirm-context";
 import { ErrorState, LoadingState } from "@/components/feedback/States";
@@ -8,10 +8,12 @@ import { Button, IconButton } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Dropdown, type DropdownItem } from "@/components/ui/Dropdown";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { env } from "@/config/env";
 import type { ContentResource } from "@/config/resources";
 import { formatDateTime } from "@/lib/format";
 import type { ContentRepository } from "@/repositories/content";
 import type { ContentStatus } from "@/types";
+import { ContentPreviewModal, type PreviewData } from "./ContentPreview";
 import { ReadOnlyNotice } from "./ReadOnlyNotice";
 import { useContentActions } from "./useContent";
 
@@ -29,6 +31,8 @@ interface EditorLayoutProps<TRow, TItem, TInput> {
   onSubmit: (status?: ContentStatus) => void;
   /** Mention « Programmé » (article publié avec une date future). */
   scheduled?: boolean;
+  /** Données de l'aperçu avant publication (valeurs courantes du formulaire). */
+  preview?: PreviewData;
   main: ReactNode;
   aside: ReactNode;
 }
@@ -47,10 +51,12 @@ export function EditorLayout<TRow, TItem, TInput>({
   isDirty,
   onSubmit,
   scheduled,
+  preview,
   main,
   aside,
 }: EditorLayoutProps<TRow, TItem, TInput>) {
   const confirm = useConfirm();
+  const [previewOpen, setPreviewOpen] = useState(false);
   const navigate = useNavigate();
   const { remove } = useContentActions(resource, repository);
 
@@ -83,8 +89,15 @@ export function EditorLayout<TRow, TItem, TInput>({
   if (!isNew && status !== "archived") menu.push({ label: "Archiver", icon: Archive, onSelect: () => void archive() });
   if (!isNew && status === "archived") menu.push({ label: "Supprimer définitivement", icon: Trash2, tone: "danger", onSelect: () => void destroy() });
 
+  const previewButton = preview ? (
+    <Button variant="ghost" icon={ScanEye} onClick={() => setPreviewOpen(true)}>
+      Aperçu
+    </Button>
+  ) : null;
+
   const actions = canManage ? (
     <>
+      {previewButton}
       {menu.length ? <Dropdown trigger={(props) => <IconButton icon={MoreHorizontal} label="Plus d'actions" variant="secondary" {...props} />} items={menu} /> : null}
       {isNew ? (
         <>
@@ -138,8 +151,9 @@ export function EditorLayout<TRow, TItem, TInput>({
           </>
         }
         description={!isNew && updatedAt ? `Dernière modification : ${formatDateTime(updatedAt)}` : undefined}
-        actions={actions}
+        actions={actions ?? previewButton}
       />
+      {preview ? <ContentPreviewModal open={previewOpen} onClose={() => setPreviewOpen(false)} data={preview} siteUrl={env.publicSiteUrl} /> : null}
       {!canManage ? <ReadOnlyNotice /> : null}
       <form
         onSubmit={(event) => {

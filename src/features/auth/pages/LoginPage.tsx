@@ -3,13 +3,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation, useNavigate } from "react-router";
 import { z } from "zod";
-import { AlertCircle, LogIn, Mail } from "lucide-react";
+import { AlertCircle, LogIn, Mail, ShieldAlert } from "lucide-react";
 import { Field } from "@/components/forms/Field";
 import { Button } from "@/components/ui/Button";
 import { Input, PasswordInput } from "@/components/ui/Input";
 import { errorMessage } from "@/lib/errors";
 import { AuthLayout } from "@/layouts/AuthLayout";
-import { redirectTarget, useAuth } from "../auth-context";
+import { ACCESS_NOTICE_MESSAGES, redirectTarget, useAuth } from "../auth-context";
 
 const schema = z.object({
   email: z.string().trim().min(1, "L'adresse e-mail est requise.").email("Adresse e-mail invalide."),
@@ -19,7 +19,7 @@ const schema = z.object({
 type LoginValues = z.infer<typeof schema>;
 
 export default function LoginPage() {
-  const { signIn } = useAuth();
+  const { signIn, notice } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [formError, setFormError] = useState<string | null>(null);
@@ -43,6 +43,12 @@ export default function LoginPage() {
   return (
     <AuthLayout title="Connexion" description="Identifiez-vous pour accéder au back-office UPCOM.">
       <form onSubmit={onSubmit} className="space-y-5" noValidate>
+        {notice && !formError ? (
+          <div role="alert" className="flex items-start gap-2.5 rounded-xl border border-warning/25 bg-warning-50 px-4 py-3 text-sm text-ink-soft">
+            <ShieldAlert className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
+            {ACCESS_NOTICE_MESSAGES[notice]}
+          </div>
+        ) : null}
         {formError ? (
           <div role="alert" className="flex items-start gap-2.5 rounded-xl border border-danger/20 bg-danger-50 px-4 py-3 text-sm text-danger">
             <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden />

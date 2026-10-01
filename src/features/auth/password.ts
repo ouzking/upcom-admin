@@ -14,3 +14,15 @@ export const PASSWORD_RULES: { label: string; test: (value: string) => boolean }
   { label: "Une majuscule", test: (value) => /[A-Z]/.test(value) },
   { label: "Un chiffre", test: (value) => /[0-9]/.test(value) },
 ];
+
+/**
+ * Score 0 → 4. Les 4 règles obligatoires (alignées sur Supabase Auth) donnent au
+ * mieux « Bon » ; la longueur (≥ 16) et un caractère spécial mènent à « Excellent ».
+ */
+export function passwordScore(value: string): number {
+  if (!value) return 0;
+  const rules = PASSWORD_RULES.filter((rule) => rule.test(value)).length;
+  if (rules < 4) return rules <= 1 ? 1 : 2;
+  const bonus = Number(value.length >= 16) + Number(/[^A-Za-z0-9]/.test(value));
+  return bonus >= 1 ? 4 : 3;
+}

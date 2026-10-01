@@ -172,14 +172,17 @@ Comportement de l'interface :
 
 | Écran | Contenu |
 |---|---|
-| **Connexion** | e-mail / mot de passe, mot de passe oublié, session persistante ; `/auth/accept-invite` traite **invitations et réinitialisations** (type lu dans le lien, lien expiré expliqué), messages Supabase Auth traduits |
+| **Connexion** | e-mail / mot de passe, mot de passe oublié, session persistante ; `/auth/accept-invite` traite **invitations et réinitialisations** (type lu dans le lien), indicateur de force du mot de passe, lien expiré → « Recevoir un nouveau lien » ; compte sans rôle ou désactivé → « Accès non autorisé » et déconnexion ; serveur injoignable → « Réessayer » sans perdre la session |
 | **Tableau de bord** | « Bonjour, [prénom] », indicateurs (services publiés, réalisations, articles, événements, devis, messages), dernières demandes, notifications, derniers contenus, activité récente, raccourcis de création |
 | **Services, Réalisations, Actualités, Événements, Équipe, Témoignages** | liste (recherche, filtres statut / catégorie / mise en avant, pagination, état dans l'URL) ; création, modification, publication, dépublication, archivage, restauration, suppression d'un contenu archivé ; garde « modifications non enregistrées » |
 | Réalisations | image principale + **galerie** (upload multiple, glisser-déposer, réordonnancement, texte alternatif, légende) |
-| Images | **optimisées avant l'envoi** : côté le plus long ≤ 2400 px, WebP (une photo de smartphone de plusieurs Mo passe sous les limites des buckets) |
+| Images | **optimisées avant l'envoi** : ≤ 2000 px et ≤ 1 Mo, WebP (qualité puis dimensions réduites par paliers) ; l'ancienne image d'un contenu est supprimée du stockage quand elle est remplacée (jamais une image choisie dans la médiathèque) ; nouvelles tentatives automatiques sur erreur serveur passagère |
+| Ordre d'affichage | bouton **Réorganiser** (services, réalisations, équipe, témoignages) : glisser-déposer ou flèches, enregistre `display_order` |
+| Aperçu | bouton **Aperçu** dans chaque fiche : rendu proche du site, avant publication |
+| Éditeur | collage depuis Word / Google Docs / web **nettoyé** (titres, gras, listes, liens conservés ; styles, scripts, images supprimés) — le format reste le Markdown sûr lu par le site public |
 | Actualités | **éditeur de contenu** (barre d'outils, raccourcis, aperçu fidèle au site, compteur de mots), catégories, signature, **publication programmée** |
-| **Demandes de devis** | compteurs par statut, fiche détaillée, pipeline Nouveau → En cours → Contacté → Converti / Clôturé, assignation, notes internes, réponse e-mail / appel, renvoi de la notification |
-| **Messages** | boîte de réception à deux volets, lu / non lu (lecture automatique), répondu, archivage, notes internes |
+| **Demandes de devis** | compteurs par statut, fiche détaillée, pipeline Nouveau → En cours → Contacté → Converti / Clôturé, assignation, notes internes, **Répondre par e-mail / Appeler / WhatsApp** (+221 ajouté aux numéros sénégalais), renvoi de la notification |
+| **Messages** | boîte de réception à deux volets, lu / non lu (lecture automatique), répondu, archivage, notes internes, e-mail / appel / WhatsApp, renvoi de la notification |
 | **Médiathèque** | navigation par rubrique et dossier, upload multiple, aperçu, lien public, recherche, suppression (unitaire ou multiple) selon permissions |
 | **Paramètres** | identité, coordonnées officielles, logo, favicon, réseaux sociaux (ajout, masquage, suppression) |
 | **Utilisateurs** | liste, invitation, changement de rôle, activation / désactivation, matrice des droits |
@@ -274,7 +277,8 @@ La CI (`.github/workflows/ci.yml`) exécute types, lint, tests et build à chaqu
 
 Déployé sur **Netlify** : https://admin.upcomagency.com (alias https://upcom-admin.netlify.app) (projet Supabase `gopjiglltfohtzeqijsq`).
 `netlify.toml` définit le build, les variables **publiques** (URL + clé publishable), la réécriture SPA et
-les en-têtes de sécurité : chaque push sur `main` redéploie. Pour changer de projet Supabase, modifier ces
+les en-têtes de sécurité (CSP limitée au site et au projet Supabase, HSTS, `X-Frame-Options: DENY`,
+`X-Robots-Tag: noindex, nofollow`) ; `public/robots.txt` interdit l'indexation. Chaque push sur `main` redéploie. Pour changer de projet Supabase, modifier ces
 variables (jamais de clé secrète dans ce fichier).
 1. Supabase → *Authentication → URL Configuration* : **Site URL** = URL du back-office ; **Redirect
    URLs** incluant `https://admin.<domaine>/**` (pages `/auth/accept-invite` et `/auth/reset-password`).

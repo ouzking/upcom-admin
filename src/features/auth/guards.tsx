@@ -3,7 +3,7 @@ import { Navigate, Outlet, useLocation } from "react-router";
 import { ForbiddenState, FullPageLoader } from "@/components/feedback/States";
 import type { AppPermission } from "@/types";
 import { redirectTarget, useAuth } from "./auth-context";
-import { NoAccessPage } from "./pages/NoAccessPage";
+import { ServerUnavailablePage } from "./pages/ServerUnavailablePage";
 
 /**
  * Routes protégées : session obligatoire + profil actif avec rôle.
@@ -18,7 +18,7 @@ export function RequireAuth() {
     const from = `${location.pathname}${location.search}`;
     return <Navigate to="/login" replace state={{ from }} />;
   }
-  if (status === "no_access") return <NoAccessPage />;
+  if (status === "error") return <ServerUnavailablePage />;
   return <Outlet />;
 }
 

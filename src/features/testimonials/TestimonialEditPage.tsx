@@ -31,7 +31,7 @@ function TestimonialForm({ editor, initial }: { editor: ContentEditor<Testimonia
   });
   const { register, control, formState } = form;
   const { errors } = formState;
-  const [name, content] = useWatch({ control, name: ["name", "content"] });
+  const [name, content, role, company, photoPath] = useWatch({ control, name: ["name", "content", "role", "company", "photo_path"] });
   const { submit, currentStatus, isSaving, isDirty } = useEditorSubmit(editor, form, testimonialToInput, testimonialToValues);
 
   return (
@@ -47,6 +47,7 @@ function TestimonialForm({ editor, initial }: { editor: ContentEditor<Testimonia
       isSaving={isSaving}
       isDirty={isDirty}
       onSubmit={submit}
+      preview={{ bucket: resource.bucket, layout: "quote", title: name, eyebrow: [role, company].filter(Boolean).join(" · "), body: content, imagePath: photoPath }}
       main={
         <FormSection title="Témoignage">
           <Field label="Témoignage" required error={errors.content?.message} counter={{ value: content.length, max: 2000 }}>

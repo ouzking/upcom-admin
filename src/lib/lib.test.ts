@@ -35,7 +35,7 @@ describe("recherche PostgREST", () => {
 
 describe("erreurs", () => {
   it("traduit un refus RLS", () => {
-    expect(toAppError({ code: "42501", message: "new row violates row-level security policy" }).message).toMatch(/droits nécessaires/);
+    expect(toAppError({ code: "42501", message: "new row violates row-level security policy" }).message).toMatch(/droits pour/);
   });
 
   it("conserve le message métier des triggers de garde", () => {

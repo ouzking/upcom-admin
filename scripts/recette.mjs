@@ -111,7 +111,7 @@ async function upload(bucket, folder, label) {
 /** Supprime les fichiers de recette orphelins d'exécutions précédentes (ex. envoi interrompu). */
 async function sweepOrphans() {
   let removed = 0;
-  for (const bucket of ["services", "projects", "articles", "events"]) {
+  for (const bucket of ["services", "projects", "articles", "events", "team", "testimonials"]) {
     const { data: folders } = await supabase.storage.from(bucket).list(bucket, { limit: 1000 });
     for (const folder of folders ?? []) {
       if (folder.id) continue;
@@ -181,7 +181,7 @@ async function main() {
 
   const categories = ok(await supabase.from("service_categories").select("id").limit(1), "catégories");
 
-  console.log("\nContenus (créer, modifier, publier, archiver, supprimer) + upload");
+  console.log("\nServices, réalisations, actualités, événements (créer, modifier, publier, archiver, supprimer) + images");
   await check("Service", () =>
     contentCycle({
       table: "services",
@@ -224,6 +224,57 @@ async function main() {
       update: { location: "Dakar — modifié" },
     }),
   );
+  await check("Actualité programmée (date future) invisible pour les visiteurs", async () => {
+    const id = randomUUID();
+    cleanup.push(async () => supabase.from("articles").delete().eq("id", id));
+    const future = new Date(Date.now() + 30 * 864e5).toISOString();
+    ok(await supabase.from("articles").insert({ id, title: `${PREFIX} Actualité programmée`, excerpt: "Recette.", status: "published", published_at: future }), "création");
+    const visible = ok(await anon.from("articles").select("id").eq("id", id), "lecture visiteur");
+    if (visible.length) throw new Error("un article programmé est déjà visible publiquement");
+    affected(await supabase.from("articles").delete().eq("id", id).select("id"), "suppression");
+    return "publiée mais masquée jusqu'à sa date";
+  });
+
+  console.log("\nÉquipe et témoignages");
+  await check("Équipe", () =>
+    contentCycle({
+      table: "team_members",
+      bucket: "team",
+      imageColumn: "photo_path",
+      titleColumn: "name",
+      insert: { name: `${PREFIX} Membre`, position: "Poste de recette" },
+      update: { biography: "Biographie de recette." },
+    }),
+  );
+  await check("Témoignage", () =>
+    contentCycle({
+      table: "testimonials",
+      bucket: "testimonials",
+      imageColumn: "photo_path",
+      titleColumn: "name",
+      insert: { name: `${PREFIX} Client`, content: "Témoignage créé par la recette automatique." },
+      update: { company: "Entreprise de recette" },
+    }),
+  );
+
+  console.log("\nParamètres du site et réseaux sociaux");
+  await check("Paramètres : lecture et enregistrement (sans modification réelle)", async () => {
+    const settings = ok(await supabase.from("site_settings").select("company_name, tagline").eq("id", 1).single(), "lecture");
+    affected(await supabase.from("site_settings").update({ tagline: settings.tagline }).eq("id", 1).select("id"), "enregistrement");
+    return settings.company_name;
+  });
+  await check("Réseaux sociaux : ajout (masqué) puis suppression", async () => {
+    const created = ok(
+      await supabase.from("social_links").insert({ platform: "other", label: `${PREFIX} Lien`, url: `https://example.com/recette-${Date.now()}`, is_active: false }).select("id").single(),
+      "ajout",
+    );
+    cleanup.push(async () => supabase.from("social_links").delete().eq("id", created.id));
+    const publicLinks = ok(await anon.from("social_links").select("id").eq("id", created.id), "lecture visiteur");
+    if (publicLinks.length) throw new Error("un lien masqué est visible publiquement");
+    affected(await supabase.from("social_links").update({ label: `${PREFIX} Lien modifié` }).eq("id", created.id).select("id"), "modification");
+    affected(await supabase.from("social_links").delete().eq("id", created.id).select("id"), "suppression");
+    return "lien masqué invisible pour les visiteurs";
+  });
 
   console.log("\nDemandes reçues depuis le site public (Edge Functions)");
   await check("Demande de devis → statut, attribution, note interne", async () => {
@@ -255,6 +306,23 @@ async function main() {
     affected(await supabase.from("contact_messages").update({ status: "archived" }).eq("id", id).select("id"), "archivage");
     affected(await supabase.from("contact_messages").delete().eq("id", id).select("id"), "suppression");
     return "reçu et traité";
+  });
+
+  console.log("\nUtilisateurs");
+  await check("Invitation d'un compte existant → refus « compte existant » (aucun e-mail envoyé)", async () => {
+    try {
+      await callFunction("admin-invite-user", { email, full_name: null, role: "editor" }, { asUser: true });
+    } catch (error) {
+      if (/409|conflict/i.test(error.message)) return "409 — « Un compte existe déjà avec cette adresse e-mail »";
+      throw error;
+    }
+    throw new Error("l'invitation d'un compte existant n'a pas été refusée");
+  });
+  await check("Liste des utilisateurs et rôles", async () => {
+    const users = ok(await supabase.from("profiles").select("email, role, is_active"), "lecture");
+    const admins = users.filter((user) => user.role === "super_admin" && user.is_active).length;
+    if (!admins) throw new Error("aucun super_admin actif");
+    return `${users.length} compte(s), dont ${admins} super_admin actif(s)`;
   });
 
   if (inviteEmail) {

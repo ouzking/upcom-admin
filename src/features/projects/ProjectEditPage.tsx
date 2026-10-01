@@ -82,7 +82,7 @@ function ProjectForm({ editor, initial, initialImages, galleryRef, savedImagesRe
   });
   const { register, control, formState } = form;
   const { errors } = formState;
-  const [title, excerpt] = useWatch({ control, name: ["title", "excerpt"] });
+  const [title, excerpt, description, coverPath, clientName, year, categoryId] = useWatch({ control, name: ["title", "excerpt", "description", "cover_image_path", "client_name", "year", "category_id"] });
 
   const toInput = (values: ProjectFormValues) => {
     galleryRef.current = values.gallery;
@@ -106,6 +106,7 @@ function ProjectForm({ editor, initial, initialImages, galleryRef, savedImagesRe
       isSaving={isSaving}
       isDirty={isDirty}
       onSubmit={submit}
+      preview={{ bucket: resource.bucket, title, excerpt, body: description, imagePath: coverPath, eyebrow: categories.data?.find((category) => category.id === categoryId)?.name ?? "Réalisation", meta: [clientName, year].filter(Boolean).map((text) => ({ icon: "date" as const, text })) }}
       main={
         <>
           <FormSection title="Projet">

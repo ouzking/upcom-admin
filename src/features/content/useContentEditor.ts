@@ -7,6 +7,7 @@ import { useAuth } from "@/features/auth/auth-context";
 import { errorMessage } from "@/lib/errors";
 import { queryKeys } from "@/lib/queryKeys";
 import type { ContentRepository } from "@/repositories/content";
+import { mediaRepository } from "@/repositories/media.repository";
 import type { ContentStatus } from "@/types";
 import { useContentItem } from "./useContent";
 
@@ -51,6 +52,14 @@ export function useContentEditor<TRow extends { id: string; status: ContentStatu
     },
     onSuccess: async (row, { status }) => {
       const previous = item.data?.status;
+      // Image remplacée : l'ancien fichier propre à ce contenu est supprimé du stockage.
+      const column = resource.imageColumn as keyof TRow;
+      void mediaRepository.removeReplaced(
+        resource.bucket,
+        `${resource.bucket}/${row.id}`,
+        item.data?.[column] as string | null | undefined,
+        row[column] as string | null | undefined,
+      );
       if (isNew) toast.success(status === "published" ? "Publication effectuée." : resource.createdMessage);
       else if (status !== previous && status === "published") toast.success("Publication effectuée.");
       else if (status !== previous && previous === "published" && status === "draft") toast.success("Contenu dépublié.");

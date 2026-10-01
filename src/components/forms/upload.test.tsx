@@ -67,7 +67,7 @@ describe("Upload d'images", () => {
     const { user } = renderPage("/", <ImageHarness />);
     await user.upload(screen.getByTestId("file-input-services"), image("photo.webp"));
     expect(await screen.findByText(/Échec de l'envoi de photo.webp/)).toBeInTheDocument();
-    expect(screen.getByText(/droits nécessaires/)).toBeInTheDocument();
+    expect(screen.getByText(/droits pour/)).toBeInTheDocument();
   });
 
   it("galerie : upload multiple et ordre conservé", async () => {

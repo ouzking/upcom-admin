@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
@@ -14,6 +14,7 @@ import { Input, PasswordInput } from "@/components/ui/Input";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { displayName, useAuth } from "@/features/auth/auth-context";
 import { passwordSchema } from "@/features/auth/password";
+import { PasswordStrength } from "@/features/auth/PasswordStrength";
 import { errorMessage } from "@/lib/errors";
 import { PERMISSION_LABELS, ROLE_LABELS } from "@/lib/labels";
 import { authRepository } from "@/repositories/auth.repository";
@@ -37,6 +38,7 @@ export default function AccountPage() {
   });
 
   const passwordForm = useForm<z.infer<typeof passwordFormSchema>>({ resolver: zodResolver(passwordFormSchema), defaultValues: { password: "", confirm: "" } });
+  const newPassword = useWatch({ control: passwordForm.control, name: "password" });
   const changePassword = useMutation({
     mutationFn: (password: string) => authRepository.updatePassword(password),
     onSuccess: () => {
@@ -95,6 +97,7 @@ export default function AccountPage() {
                 <Field label="Nouveau mot de passe" error={passwordForm.formState.errors.password?.message}>
                   <PasswordInput autoComplete="new-password" {...passwordForm.register("password")} />
                 </Field>
+                <PasswordStrength value={newPassword} />
                 <Field label="Confirmation" error={passwordForm.formState.errors.confirm?.message}>
                   <PasswordInput autoComplete="new-password" {...passwordForm.register("confirm")} />
                 </Field>

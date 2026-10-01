@@ -1,42 +1,62 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { useQueryClient } from "@tanstack/react-query";
+import { AppError } from "@/lib/errors";
 import { can as canAccess } from "@/lib/permissions";
 import { authRepository } from "@/repositories/auth.repository";
 import type { AppPermission, MyAccess, ProfileRow } from "@/types";
-import { AuthContext, type AuthContextValue, type AuthStatus } from "./auth-context";
+import { ACCESS_NOTICE_MESSAGES, AuthContext, type AccessNotice, type AuthContextValue, type AuthStatus } from "./auth-context";
 
 interface AuthState {
   status: AuthStatus;
   session: Session | null;
   profile: ProfileRow | null;
   access: MyAccess | null;
+  notice: AccessNotice | null;
 }
 
-const SIGNED_OUT: AuthState = { status: "signed_out", session: null, profile: null, access: null };
+const SIGNED_OUT: AuthState = { status: "signed_out", session: null, profile: null, access: null, notice: null };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ ...SIGNED_OUT, status: "loading" });
   const [isRecovery, setIsRecovery] = useState(false);
   const queryClient = useQueryClient();
   const loadedUserId = useRef<string | null>(null);
+  const noticeRef = useRef<AccessNotice | null>(null);
 
-  /** Charge profil + droits pour une session (source : base de données, jamais le JWT). */
-  const load = useCallback(async (session: Session | null) => {
-    if (!session) {
-      loadedUserId.current = null;
-      setState(SIGNED_OUT);
-      return;
-    }
-    try {
-      const [profile, access] = await Promise.all([authRepository.fetchProfile(session.user.id), authRepository.fetchAccess()]);
-      loadedUserId.current = session.user.id;
-      setState({ status: profile && access ? "ready" : "no_access", session, profile, access });
-    } catch {
-      // Droits illisibles : on refuse l'accès plutôt que d'ouvrir l'interface.
-      setState({ status: "no_access", session, profile: null, access: null });
-    }
-  }, []);
+  /**
+   * Charge profil + droits pour une session (source : base de données, jamais le JWT).
+   * Compte sans rôle ou désactivé → « Accès non autorisé » et déconnexion immédiate.
+   * Serveur injoignable → état « error » (la session est conservée, l'utilisateur peut réessayer).
+   */
+  const load = useCallback(
+    async (session: Session | null): Promise<AuthStatus> => {
+      if (!session) {
+        loadedUserId.current = null;
+        setState({ ...SIGNED_OUT, notice: noticeRef.current });
+        return "signed_out";
+      }
+      try {
+        const [profile, access] = await Promise.all([authRepository.fetchProfile(session.user.id), authRepository.fetchAccess()]);
+        if (profile && access) {
+          noticeRef.current = null;
+          loadedUserId.current = session.user.id;
+          setState({ status: "ready", session, profile, access, notice: null });
+          return "ready";
+        }
+        noticeRef.current = profile && !profile.is_active ? "inactive" : "no_access";
+        loadedUserId.current = null;
+        await authRepository.signOut().catch(() => undefined);
+        queryClient.clear();
+        setState({ ...SIGNED_OUT, notice: noticeRef.current });
+        return "signed_out";
+      } catch {
+        setState({ status: "error", session, profile: null, access: null, notice: null });
+        return "error";
+      }
+    },
+    [queryClient],
+  );
 
   useEffect(() => {
     let active = true;
@@ -57,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         queryClient.clear();
         setIsRecovery(false);
         loadedUserId.current = null;
-        setState(SIGNED_OUT);
+        setState({ ...SIGNED_OUT, notice: noticeRef.current });
         return;
       }
       // Un rafraîchissement de jeton ne change pas les droits : on met juste la session à jour.
@@ -81,13 +101,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback(
     async (email: string, password: string) => {
+      noticeRef.current = null;
       const session = await authRepository.signIn(email, password);
-      await load(session);
+      const status = await load(session);
+      if (status === "signed_out" && noticeRef.current) throw new AppError(ACCESS_NOTICE_MESSAGES[noticeRef.current], { code: noticeRef.current });
+      if (status === "error") throw new AppError("Connexion au serveur impossible. Vérifiez votre connexion Internet.", { code: "network" });
     },
     [load],
   );
 
   const signOut = useCallback(async () => {
+    noticeRef.current = null;
     try {
       await authRepository.signOut();
     } finally {

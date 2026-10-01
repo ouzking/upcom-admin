@@ -29,8 +29,12 @@
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
     X-Robots-Tag = "noindex, nofollow"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    Cross-Origin-Opener-Policy = "same-origin"
+    # Seuls le back-office lui-même et le projet Supabase sont autorisés (scripts, appels, images).
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://gopjiglltfohtzeqijsq.supabase.co; font-src 'self' data:; connect-src 'self' https://gopjiglltfohtzeqijsq.supabase.co wss://gopjiglltfohtzeqijsq.supabase.co; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
 
 # Fichiers versionnés par Vite (nom avec empreinte) : cache long.
 [[headers]]

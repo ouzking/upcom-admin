@@ -31,7 +31,7 @@ describe("upload Storage — erreurs passagères", () => {
 
   it("ne réessaie pas un refus de droits", async () => {
     storage.upload.mockResolvedValueOnce({ error: { statusCode: "403", message: "new row violates row-level security policy" } });
-    await expect(mediaRepository.upload("services", "services/svc-1", file)).rejects.toThrow(/droits nécessaires/);
+    await expect(mediaRepository.upload("services", "services/svc-1", file)).rejects.toThrow(/droits pour/);
     expect(storage.upload).toHaveBeenCalledTimes(1);
   });
 

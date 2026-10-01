@@ -58,7 +58,7 @@ export function toAppError(error: unknown): AppError {
   // Droits insuffisants (RLS, privilèges, triggers de garde).
   if (code === "42501" || status === 403 || /row-level security|permission denied/i.test(text)) {
     const custom = code === "42501" && error.message && !/row-level security|permission denied/i.test(error.message);
-    return new AppError(custom ? error.message! : "Vous n'avez pas les droits nécessaires pour effectuer cette action.", {
+    return new AppError(custom ? error.message! : "Vous n'avez pas les droits pour cette action.", {
       code: "forbidden",
       cause: error,
     });

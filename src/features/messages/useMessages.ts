@@ -32,6 +32,15 @@ export function useMessageMutations() {
       },
       onError: (error) => toast.error(errorMessage(error)),
     }),
+    resend: useMutation({
+      mutationFn: messagesRepository.resendNotification,
+      onSuccess: (result) => {
+        if (result.status === "skipped") toast.info("Notification non envoyée", "L'envoi d'e-mails n'est pas configuré sur le serveur.");
+        else toast.success("Notification envoyée à l'équipe.");
+        void queryClient.invalidateQueries({ queryKey: queryKeys.messages });
+      },
+      onError: (error) => toast.error(errorMessage(error)),
+    }),
     remove: useMutation({
       mutationFn: messagesRepository.remove,
       onSuccess: async () => {

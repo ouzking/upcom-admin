@@ -1,6 +1,7 @@
-import { useRef, useState, type KeyboardEvent } from "react";
+import { useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 import { Bold, Eye, Heading2, Heading3, Italic, Link2, List, ListOrdered, PenLine, Quote, SquarePlay, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { htmlToMarkdown } from "@/lib/htmlToMarkdown";
 import { controlClass } from "@/components/ui/control";
 import { RichTextPreview } from "./RichTextPreview";
 
@@ -78,6 +79,23 @@ export function MarkdownEditor({ value, onChange, id, invalid, disabled, placeho
     });
   };
 
+  /** Collage depuis Word / Google Docs / une page web : HTML converti et nettoyé. */
+  const onPaste = (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    const html = event.clipboardData.getData("text/html");
+    if (!html) return; // texte brut : collage natif
+    const markdown = htmlToMarkdown(html);
+    if (!markdown) return;
+    event.preventDefault();
+    const textarea = event.currentTarget;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    onChange(value.slice(0, start) + markdown + value.slice(end));
+    requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + markdown.length, start + markdown.length);
+    });
+  };
+
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (!(event.ctrlKey || event.metaKey)) return;
     const key = event.key.toLowerCase();
@@ -138,6 +156,7 @@ export function MarkdownEditor({ value, onChange, id, invalid, disabled, placeho
           placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={onKeyDown}
+          onPaste={onPaste}
           aria-invalid={invalid || undefined}
           className={cn(controlClass(false), "block min-h-60 resize-y rounded-none border-0 py-3 font-mono text-[13.5px] leading-relaxed focus:ring-0")}
           {...aria}

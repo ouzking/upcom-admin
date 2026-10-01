@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
-import { Archive, ArchiveRestore, Eye, EyeOff, FilterX, MoreHorizontal, Pencil, Plus, Star, Trash2 } from "lucide-react";
+import { ArrowUpDown, Archive, ArchiveRestore, Eye, EyeOff, FilterX, MoreHorizontal, Pencil, Plus, Star, Trash2 } from "lucide-react";
 import { useConfirm } from "@/components/feedback/confirm-context";
 import { EmptyState } from "@/components/feedback/States";
 import { DataTable, type Column } from "@/components/data/DataTable";
@@ -19,6 +19,7 @@ import { CONTENT_STATUS_LABELS, CONTENT_STATUSES } from "@/lib/labels";
 import type { ContentRepository } from "@/repositories/content";
 import type { ContentStatus } from "@/types";
 import { ReadOnlyNotice } from "./ReadOnlyNotice";
+import { ReorderModal } from "./ReorderModal";
 import { useContentActions, useContentList } from "./useContent";
 
 interface BaseRow {
@@ -61,6 +62,7 @@ export function ContentListPage<TRow, TItem extends BaseRow, TInput>({
   const canManage = can(resource.permission);
   const confirm = useConfirm();
   const navigate = useNavigate();
+  const [reorderOpen, setReorderOpen] = useState(false);
   const list = useListState(FILTER_KEYS);
   const status = CONTENT_STATUSES.find((value) => value === list.filters.status);
 
@@ -155,13 +157,21 @@ export function ContentListPage<TRow, TItem extends BaseRow, TInput>({
         description={description}
         actions={
           canManage ? (
-            <ButtonLink to={`${resource.path}/nouveau`} icon={Plus}>
-              {newLabel}
-            </ButtonLink>
+            <>
+              {resource.orderable ? (
+                <Button variant="secondary" icon={ArrowUpDown} onClick={() => setReorderOpen(true)}>
+                  Réorganiser
+                </Button>
+              ) : null}
+              <ButtonLink to={`${resource.path}/nouveau`} icon={Plus}>
+                {newLabel}
+              </ButtonLink>
+            </>
           ) : null
         }
       />
       {!canManage ? <ReadOnlyNotice /> : null}
+      {resource.orderable && canManage ? <ReorderModal open={reorderOpen} onClose={() => setReorderOpen(false)} resource={resource} /> : null}
 
       <Card>
         <div className="flex flex-col gap-3 border-b border-line p-4 lg:flex-row lg:items-center lg:justify-between">

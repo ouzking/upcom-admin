@@ -37,3 +37,48 @@ export async function countContent(table: ContentTable, status?: ContentStatus):
   assertOk({ error });
   return count ?? 0;
 }
+
+/** Rubriques dotées d'une colonne display_order. */
+export type OrderableTable = "services" | "projects" | "team_members" | "testimonials";
+
+export interface OrderableItem {
+  id: string;
+  label: string;
+  detail: string | null;
+  status: ContentStatus;
+  imagePath: string | null;
+}
+
+/** Tous les éléments (hors archivés) dans l'ordre d'affichage actuel, pour la réorganisation. */
+export async function listForOrdering(table: OrderableTable): Promise<OrderableItem[]> {
+  switch (table) {
+    case "services": {
+      const { data, error } = await supabase.from("services").select("id, title, short_description, status, image_path, display_order").neq("status", "archived").order("display_order").order("title");
+      assertOk({ error });
+      return (data ?? []).map((row) => ({ id: row.id, label: row.title, detail: row.short_description, status: row.status, imagePath: row.image_path }));
+    }
+    case "projects": {
+      const { data, error } = await supabase.from("projects").select("id, title, client_name, status, cover_image_path, display_order").neq("status", "archived").order("display_order").order("title");
+      assertOk({ error });
+      return (data ?? []).map((row) => ({ id: row.id, label: row.title, detail: row.client_name, status: row.status, imagePath: row.cover_image_path }));
+    }
+    case "team_members": {
+      const { data, error } = await supabase.from("team_members").select("id, name, position, status, photo_path, display_order").neq("status", "archived").order("display_order").order("name");
+      assertOk({ error });
+      return (data ?? []).map((row) => ({ id: row.id, label: row.name, detail: row.position, status: row.status, imagePath: row.photo_path }));
+    }
+    case "testimonials": {
+      const { data, error } = await supabase.from("testimonials").select("id, name, company, status, photo_path, display_order").neq("status", "archived").order("display_order").order("created_at");
+      assertOk({ error });
+      return (data ?? []).map((row) => ({ id: row.id, label: row.name, detail: row.company, status: row.status, imagePath: row.photo_path }));
+    }
+  }
+}
+
+/** Enregistre le nouvel ordre : display_order = 10, 20, 30… (laisse de la place pour des insertions). */
+export async function saveOrder(table: OrderableTable, ids: string[]): Promise<void> {
+  const results = await Promise.all(
+    ids.map((id, index) => supabase.from(table).update({ display_order: (index + 1) * 10 }).eq("id", id).select("id")),
+  );
+  for (const result of results) assertAffected(result);
+}

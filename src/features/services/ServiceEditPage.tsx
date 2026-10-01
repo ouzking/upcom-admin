@@ -37,7 +37,7 @@ function ServiceForm({ editor, initial }: { editor: ContentEditor<ServiceRow, Se
   });
   const { register, control, formState } = form;
   const { errors } = formState;
-  const [title, shortDescription] = useWatch({ control, name: ["title", "short_description"] });
+  const [title, shortDescription, description, imagePath, categoryId] = useWatch({ control, name: ["title", "short_description", "description", "image_path", "category_id"] });
   const { submit, currentStatus, isSaving, isDirty } = useEditorSubmit(editor, form, serviceToInput, serviceToValues);
   const slug = useSlugSync(form, "title", "slug", editor.isNew);
 
@@ -54,6 +54,7 @@ function ServiceForm({ editor, initial }: { editor: ContentEditor<ServiceRow, Se
       isSaving={isSaving}
       isDirty={isDirty}
       onSubmit={submit}
+      preview={{ bucket: resource.bucket, title, excerpt: shortDescription, body: description, imagePath, eyebrow: categories.data?.find((category) => category.id === categoryId)?.name ?? "Service" }}
       main={
         <>
           <FormSection title="Informations principales">

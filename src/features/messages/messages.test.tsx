@@ -62,7 +62,7 @@ describe("Messages", () => {
     repo.get.mockResolvedValue(message({ status: "read" }));
     const { user } = renderRoutes([{ path: "/messages", element: <MessagesPage /> }], "/messages?id=m-1");
 
-    expect(await screen.findByRole("link", { name: "Répondre" })).toHaveAttribute("href", expect.stringContaining("mailto:fatou@example.com"));
+    expect(await screen.findByRole("link", { name: /Répondre par e-mail/ })).toHaveAttribute("href", expect.stringContaining("mailto:fatou@example.com"));
     await user.click(screen.getByRole("button", { name: "Marquer comme répondu" }));
     await waitFor(() => expect(repo.update).toHaveBeenCalledWith("m-1", { status: "replied" }));
   });

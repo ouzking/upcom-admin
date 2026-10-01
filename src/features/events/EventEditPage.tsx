@@ -9,6 +9,7 @@ import { SlugInput } from "@/components/forms/SlugInput";
 import { Input, Textarea } from "@/components/ui/Input";
 import { Switch } from "@/components/ui/Switch";
 import { CONTENT_RESOURCES } from "@/config/resources";
+import { formatDateTime, fromDateTimeLocal } from "@/lib/format";
 import { eventsRepository, type EventInput } from "@/repositories/events.repository";
 import type { EventRow } from "@/types";
 import { EditorLayout, EditorStatus, FormSection } from "../content/EditorLayout";
@@ -35,7 +36,7 @@ function EventForm({ editor, initial }: { editor: ContentEditor<EventRow, EventI
   });
   const { register, control, formState } = form;
   const { errors } = formState;
-  const [title, excerpt] = useWatch({ control, name: ["title", "excerpt"] });
+  const [title, excerpt, description, coverPath, eventDate, location] = useWatch({ control, name: ["title", "excerpt", "description", "cover_image_path", "event_date", "location"] });
   const { submit, currentStatus, isSaving, isDirty } = useEditorSubmit(editor, form, eventToInput, eventToValues);
   const slug = useSlugSync(form, "title", "slug", editor.isNew);
 
@@ -52,6 +53,7 @@ function EventForm({ editor, initial }: { editor: ContentEditor<EventRow, EventI
       isSaving={isSaving}
       isDirty={isDirty}
       onSubmit={submit}
+      preview={{ bucket: resource.bucket, title, excerpt, body: description, imagePath: coverPath, eyebrow: "Événement", meta: [...(eventDate ? [{ icon: "date" as const, text: formatDateTime(fromDateTimeLocal(eventDate)) }] : []), ...(location ? [{ icon: "place" as const, text: location }] : [])] }}
       main={
         <>
           <FormSection title="Événement">

@@ -2,7 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProjectImageRow } from "@/types";
 
 const mock = vi.hoisted(() => ({ current: null as null | { from: (table: string) => unknown } }));
-vi.mock("@/lib/supabase", () => ({ supabase: { from: (table: string) => mock.current!.from(table) } }));
+const removedFiles = vi.hoisted(() => [] as string[][]);
+vi.mock("@/lib/supabase", () => ({
+  supabase: {
+    from: (table: string) => mock.current!.from(table),
+    storage: { from: () => ({ remove: async (paths: string[]) => (removedFiles.push(paths), { data: paths, error: null }) }) },
+  },
+}));
 
 const { createSupabaseMock } = await import("@/test/supabaseMock");
 const { syncProjectGallery } = await import("./projects.repository");
@@ -53,6 +59,8 @@ describe("syncProjectGallery (réalisation → project_images)", () => {
     expect(writes[2]!.payload).toEqual([
       { project_id: "p-1", image_path: "projects/p-1/c.webp", alt_text: null, caption: "Vue d'ensemble", display_order: 1 },
     ]);
+    // Le fichier retiré de la galerie (dans le dossier de la réalisation) est supprimé du stockage.
+    expect(removedFiles).toContainEqual(["projects/p-1/a.webp"]);
     // La galerie renvoyée contient les identifiants des nouvelles images (évite les doublons au prochain enregistrement).
     expect(result.map((image) => image.id)).toEqual(["img-2", "img-3"]);
   });
@@ -68,6 +76,6 @@ describe("syncProjectGallery (réalisation → project_images)", () => {
       call.operation === "delete" ? { data: null, error: { code: "42501", message: "permission denied for table project_images" } } : { data: [row("img-1", "a", 0)], error: null },
     );
     mock.current = supabase.client;
-    await expect(syncProjectGallery("p-1", [])).rejects.toThrow(/droits nécessaires/);
+    await expect(syncProjectGallery("p-1", [])).rejects.toThrow(/droits pour/);
   });
 });

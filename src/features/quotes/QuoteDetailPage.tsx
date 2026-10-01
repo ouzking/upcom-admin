@@ -11,7 +11,9 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import { Select, Textarea } from "@/components/ui/Input";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { ContactActions } from "@/components/data/ContactActions";
 import { cn } from "@/lib/cn";
+import { telHref } from "@/lib/phone";
 import { formatDate, formatDateTime, formatRelative } from "@/lib/format";
 import { QUOTE_STATUS_LABELS, QUOTE_STATUSES } from "@/lib/labels";
 import type { QuoteListItem } from "@/repositories/quotes.repository";
@@ -72,8 +74,6 @@ function QuoteDetail({ quote }: { quote: QuoteListItem }) {
     }
   };
 
-  const mailSubject = encodeURIComponent(`Votre demande de devis${quote.service ? ` — ${quote.service.title}` : ""}`);
-
   return (
     <>
       <PageHeader
@@ -82,24 +82,13 @@ function QuoteDetail({ quote }: { quote: QuoteListItem }) {
         meta={<QuoteStatusBadge status={quote.status} />}
         description={`Reçue ${formatRelative(quote.created_at)} · ${formatDateTime(quote.created_at)}`}
         actions={
-          <>
-            <a
-              href={`mailto:${quote.email}?subject=${mailSubject}`}
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-sm hover:bg-brand-deep"
-            >
-              <Mail className="size-4" aria-hidden />
-              Répondre par e-mail
-            </a>
-            {quote.phone ? (
-              <a
-                href={`tel:${quote.phone.replace(/[^\d+]/g, "")}`}
-                className="inline-flex h-10 items-center gap-2 rounded-xl border border-line-strong bg-paper px-4 text-sm font-semibold text-ink shadow-sm hover:bg-mist"
-              >
-                <Phone className="size-4" aria-hidden />
-                Appeler
-              </a>
-            ) : null}
-          </>
+          <ContactActions
+            name={quote.name}
+            email={quote.email}
+            phone={quote.phone}
+            subject={`Votre demande de devis${quote.service ? ` — ${quote.service.title}` : ""}`}
+            whatsappMessage={`Bonjour ${quote.name}, nous avons bien reçu votre demande de devis${quote.service ? ` (${quote.service.title})` : ""} sur le site d'UPCOM AGENCY & SERVICES.`}
+          />
         }
       />
 
@@ -201,7 +190,7 @@ function QuoteDetail({ quote }: { quote: QuoteListItem }) {
                 </div>
               </div>
               <ContactLine icon={Mail} href={`mailto:${quote.email}`} value={quote.email} onCopy={() => void copy(quote.email, "E-mail")} />
-              {quote.phone ? <ContactLine icon={Phone} href={`tel:${quote.phone.replace(/[^\d+]/g, "")}`} value={quote.phone} onCopy={() => void copy(quote.phone ?? "", "Téléphone")} /> : null}
+              {quote.phone ? <ContactLine icon={Phone} href={telHref(quote.phone) ?? `tel:${quote.phone}`} value={quote.phone} onCopy={() => void copy(quote.phone ?? "", "Téléphone")} /> : null}
             </CardBody>
           </Card>
 

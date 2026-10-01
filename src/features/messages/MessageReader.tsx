@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Archive, ArchiveRestore, ArrowLeft, CheckCheck, Mail, MailOpen, Phone, Reply, Save, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, ArrowLeft, CheckCheck, Mail, MailOpen, Phone, BellRing, Save, Trash2 } from "lucide-react";
 import { useConfirm } from "@/components/feedback/confirm-context";
 import { ErrorState, LoadingState } from "@/components/feedback/States";
 import { ContactStatusBadge } from "@/components/data/StatusBadge";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button, IconButton } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Input";
+import { ContactActions } from "@/components/data/ContactActions";
 import { formatDateTime } from "@/lib/format";
+import { telHref } from "@/lib/phone";
 import type { MessageItem } from "@/repositories/messages.repository";
 import { useAuth } from "../auth/auth-context";
 import { useMessage, useMessageMutations } from "./useMessages";
@@ -21,7 +23,7 @@ export function MessageReader({ id, onClose }: { id: string; onClose: () => void
 function Reader({ message, onClose }: { message: MessageItem; onClose: () => void }) {
   const { can } = useAuth();
   const canManage = can("contacts.manage");
-  const { update, remove } = useMessageMutations();
+  const { update, remove, resend } = useMessageMutations();
   const confirm = useConfirm();
   const [notes, setNotes] = useState(message.internal_notes ?? "");
   const markedRef = useRef(false);
@@ -35,7 +37,6 @@ function Reader({ message, onClose }: { message: MessageItem; onClose: () => voi
   }, [canManage, message.id, message.status, update]);
 
   const status = message.status;
-  const reply = `mailto:${message.email}?subject=${encodeURIComponent(`Re: ${message.subject ?? "Votre message à UPCOM"}`)}`;
 
   const destroy = async () => {
     const ok = await confirm({ tone: "danger", title: "Supprimer ce message ?", description: "Cette action est irréversible. Préférez l'archivage pour conserver l'historique.", confirmLabel: "Supprimer" });
@@ -63,6 +64,7 @@ function Reader({ message, onClose }: { message: MessageItem; onClose: () => voi
             ) : (
               <IconButton icon={ArchiveRestore} label="Désarchiver" onClick={() => update.mutate({ id: message.id, changes: { status: "read" }, message: "Message replacé dans la boîte de réception." })} />
             )}
+            <IconButton icon={BellRing} label="Renvoyer la notification à l'équipe" disabled={resend.isPending} onClick={() => resend.mutate(message.id)} />
             <IconButton icon={Trash2} label="Supprimer" variant="danger" onClick={() => void destroy()} />
           </div>
         ) : null}
@@ -79,7 +81,7 @@ function Reader({ message, onClose }: { message: MessageItem; onClose: () => voi
                 {message.email}
               </a>
               {message.phone ? (
-                <a href={`tel:${message.phone.replace(/[^\d+]/g, "")}`} className="inline-flex items-center gap-1 hover:text-brand">
+                <a href={telHref(message.phone) ?? `tel:${message.phone}`} className="inline-flex items-center gap-1 hover:text-brand">
                   <Phone className="size-3" aria-hidden />
                   {message.phone}
                 </a>
@@ -93,12 +95,14 @@ function Reader({ message, onClose }: { message: MessageItem; onClose: () => voi
 
         <div className="mt-6 rounded-xl bg-mist px-5 py-4 text-[15px] leading-relaxed whitespace-pre-line text-ink-soft">{message.message}</div>
 
-        <div className="mt-5">
-          <a href={reply} className="inline-flex h-10 items-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-sm hover:bg-brand-deep">
-            <Reply className="size-4" aria-hidden />
-            Répondre
-          </a>
-        </div>
+        <ContactActions
+          className="mt-5"
+          name={message.name}
+          email={message.email}
+          phone={message.phone}
+          subject={`Re: ${message.subject ?? "Votre message à UPCOM"}`}
+          whatsappMessage={`Bonjour ${message.name}, nous avons bien reçu votre message sur le site d'UPCOM AGENCY & SERVICES.`}
+        />
 
         <section className="mt-8 border-t border-line pt-6" aria-labelledby="notes-title">
           <h3 id="notes-title" className="font-sans text-sm font-bold tracking-normal text-ink">

@@ -69,7 +69,13 @@ export async function syncProjectGallery(projectId: string, items: GalleryItem[]
   const keptIds = new Set(items.flatMap((item) => (item.id ? [item.id] : [])));
   const removedIds = current.filter((image) => !keptIds.has(image.id)).map((image) => image.id);
 
-  if (removedIds.length) assertAffected(await supabase.from("project_images").delete().in("id", removedIds).select("id"));
+  if (removedIds.length) {
+    assertAffected(await supabase.from("project_images").delete().in("id", removedIds).select("id"));
+    // Fichiers retirés de la galerie : supprimés s'ils appartiennent au dossier de la réalisation.
+    const ownFolder = `projects/${projectId}/`;
+    const removedPaths = current.filter((image) => !keptIds.has(image.id) && image.image_path.startsWith(ownFolder)).map((image) => image.image_path);
+    if (removedPaths.length) await supabase.storage.from("projects").remove(removedPaths).catch(() => undefined);
+  }
 
   const existing = items
     .map((item, index) => ({ item, index }))

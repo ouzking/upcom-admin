@@ -31,7 +31,7 @@ function TeamMemberForm({ editor, initial }: { editor: ContentEditor<TeamMemberR
   });
   const { register, control, formState } = form;
   const { errors } = formState;
-  const [name, biography] = useWatch({ control, name: ["name", "biography"] });
+  const [name, biography, position, photoPath] = useWatch({ control, name: ["name", "biography", "position", "photo_path"] });
   const { submit, currentStatus, isSaving, isDirty } = useEditorSubmit(editor, form, teamToInput, teamToValues);
 
   return (
@@ -47,6 +47,7 @@ function TeamMemberForm({ editor, initial }: { editor: ContentEditor<TeamMemberR
       isSaving={isSaving}
       isDirty={isDirty}
       onSubmit={submit}
+      preview={{ bucket: resource.bucket, layout: "person", title: name, eyebrow: position, body: biography, imagePath: photoPath }}
       main={
         <>
           <FormSection title="Identité">

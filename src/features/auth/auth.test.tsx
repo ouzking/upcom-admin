@@ -98,12 +98,36 @@ describe("Authentification", () => {
     expect(await screen.findByRole("heading", { name: "Tableau de bord" })).toBeInTheDocument();
   });
 
-  it("bloque un compte sans rôle (écran « Accès en attente »)", async () => {
+  it("compte sans rôle : « Accès non autorisé » puis déconnexion automatique", async () => {
     signInAs("editor");
     authRepositoryFake.fetchAccess.mockResolvedValueOnce(null);
     renderRoutes(routes, "/");
-    expect(await screen.findByRole("heading", { name: "Accès en attente" })).toBeInTheDocument();
+    expect(await screen.findByText(/Accès non autorisé : votre compte n'a pas de rôle/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Connexion" })).toBeInTheDocument();
+    expect(authRepositoryFake.signOut).toHaveBeenCalled();
     expect(screen.queryByRole("heading", { name: "Tableau de bord" })).not.toBeInTheDocument();
+  });
+
+  it("compte désactivé : refus explicite dès la connexion", async () => {
+    const { user } = renderRoutes(routes, "/login");
+    await screen.findByRole("heading", { name: "Connexion" });
+    signInAs("editor", { is_active: false });
+    authRepositoryFake.fetchAccess.mockResolvedValueOnce(null);
+    await user.type(screen.getByLabelText("Adresse e-mail"), "awa@upcom.test");
+    await user.type(screen.getByLabelText("Mot de passe"), "MotDePasse2026");
+    await user.click(screen.getByRole("button", { name: /se connecter/i }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Accès non autorisé : ce compte a été désactivé.");
+    expect(authRepositoryFake.signOut).toHaveBeenCalled();
+  });
+
+  it("serveur injoignable : la session est conservée et l'on peut réessayer", async () => {
+    signInAs("editor");
+    authRepositoryFake.fetchAccess.mockRejectedValueOnce(new Error("Failed to fetch"));
+    const { user } = renderRoutes(routes, "/");
+    expect(await screen.findByRole("heading", { name: "Connexion au serveur impossible" })).toBeInTheDocument();
+    expect(authRepositoryFake.signOut).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Réessayer" }));
+    expect(await screen.findByRole("heading", { name: "Tableau de bord" })).toBeInTheDocument();
   });
 
   it("refuse une rubrique sans la permission requise", async () => {

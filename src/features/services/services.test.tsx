@@ -15,6 +15,8 @@ const repo = vi.hoisted(() => ({
   remove: vi.fn(),
 }));
 
+const ordering = vi.hoisted(() => ({ listForOrdering: vi.fn(), saveOrder: vi.fn() }));
+vi.mock("@/repositories/content", async (importOriginal) => ({ ...(await importOriginal<object>()), ...ordering }));
 vi.mock("@/repositories/auth.repository", async () => (await import("@/test/fakes")).authModule);
 vi.mock("@/repositories/services.repository", () => ({
   servicesRepository: repo,
@@ -164,5 +166,21 @@ describe("Services", () => {
     renderRoutes(routes, "/services");
     expect(await screen.findByText(/Consultation seule/)).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Nouveau service" })).not.toBeInTheDocument();
+  });
+
+  it("réorganise l'ordre d'affichage par glisser-déposer / flèches", async () => {
+    ordering.listForOrdering.mockResolvedValue([
+      { id: "svc-a", label: "Audit", detail: null, status: "published", imagePath: null },
+      { id: "svc-b", label: "Branding", detail: null, status: "draft", imagePath: null },
+    ]);
+    ordering.saveOrder.mockResolvedValue(undefined);
+    const { user } = renderRoutes(routes, "/services");
+
+    await user.click(await screen.findByRole("button", { name: "Réorganiser" }));
+    await user.click(await screen.findByRole("button", { name: "Descendre Audit" }));
+    await user.click(screen.getByRole("button", { name: "Enregistrer l'ordre" }));
+
+    await waitFor(() => expect(ordering.saveOrder).toHaveBeenCalledWith("services", ["svc-b", "svc-a"]));
+    expect(await screen.findByText("Ordre d'affichage enregistré.")).toBeInTheDocument();
   });
 });

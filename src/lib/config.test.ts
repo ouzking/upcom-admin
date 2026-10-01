@@ -65,6 +65,23 @@ describe("écritures filtrées par la RLS", () => {
   });
 
   it("erreur 42501 explicite", () => {
-    expect(toAppError({ code: "42501", message: 'new row violates row-level security policy for table "services"' }).message).toMatch(/droits nécessaires/);
+    expect(toAppError({ code: "42501", message: 'new row violates row-level security policy for table "services"' }).message).toMatch(/droits pour/);
+  });
+});
+
+describe("téléphone → appel et WhatsApp", async () => {
+  const { internationalDigits, telHref, whatsappHref } = await import("./phone");
+  it("ajoute +221 aux numéros sénégalais saisis sans indicatif", () => {
+    expect(internationalDigits("77 402 74 94")).toBe("221774027494");
+    expect(internationalDigits("33 800 00 00")).toBe("221338000000");
+    expect(internationalDigits("+221 77 835 92 94")).toBe("221778359294");
+    expect(internationalDigits("00221 77 835 92 94")).toBe("221778359294");
+    expect(internationalDigits("+33 6 12 34 56 78")).toBe("33612345678");
+    expect(internationalDigits("123")).toBeNull();
+  });
+  it("construit les liens", () => {
+    expect(telHref("77 402 74 94")).toBe("tel:+221774027494");
+    expect(whatsappHref("77 402 74 94", "Bonjour")).toBe("https://wa.me/221774027494?text=Bonjour");
+    expect(whatsappHref(null)).toBeNull();
   });
 });

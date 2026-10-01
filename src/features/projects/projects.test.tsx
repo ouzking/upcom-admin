@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   listProjectImages: vi.fn(),
   syncProjectGallery: vi.fn(),
   upload: vi.fn(),
+  removeReplaced: vi.fn(async () => undefined),
 }));
 
 vi.mock("@/repositories/auth.repository", async () => (await import("@/test/fakes")).authModule);
@@ -21,7 +22,7 @@ vi.mock("@/repositories/projects.repository", () => ({
 vi.mock("@/repositories/services.repository", () => ({
   listServiceCategories: vi.fn(async () => [{ id: "cat-4", name: "Production audiovisuelle", slug: "production-audiovisuelle", display_order: 40, status: "published" }]),
 }));
-vi.mock("@/repositories/media.repository", () => ({ mediaRepository: { upload: mocks.upload, list: vi.fn(async () => []), remove: vi.fn() } }));
+vi.mock("@/repositories/media.repository", () => ({ mediaRepository: { upload: mocks.upload, list: vi.fn(async () => []), remove: vi.fn(), removeReplaced: mocks.removeReplaced } }));
 
 const project = (overrides: Partial<ProjectRow> = {}): ProjectRow => ({
   id: "p-1",
@@ -104,6 +105,8 @@ describe("Réalisations", () => {
     await waitFor(() => expect(mocks.repo.update).toHaveBeenCalledWith("p-1", expect.objectContaining({ status: "published" })));
     expect(mocks.syncProjectGallery).toHaveBeenCalledWith("p-1", [{ id: "img-1", image_path: "projects/p-1/a.webp", alt_text: "Tournage", caption: null }]);
     expect(await screen.findByText("Publication effectuée.")).toBeInTheDocument();
+    // Ancienne image principale : nettoyage demandé pour le dossier de la réalisation.
+    expect(mocks.removeReplaced).toHaveBeenCalledWith("projects", "projects/p-1", null, null);
   });
 
   it("refuse une année hors limites (contrainte year du schéma)", async () => {

@@ -4,11 +4,19 @@ import type { AppPermission, MyAccess, ProfileRow } from "@/types";
 
 /**
  * - loading    : lecture de la session / des droits en cours
- * - signed_out : aucune session
- * - no_access  : session valide mais profil sans rôle ou désactivé (= visiteur pour la RLS)
+ * - signed_out : aucune session (voir `notice` pour un refus d'accès)
+ * - error      : droits illisibles (serveur injoignable) — la session est conservée
  * - ready      : membre actif du back-office
  */
-export type AuthStatus = "loading" | "signed_out" | "no_access" | "ready";
+export type AuthStatus = "loading" | "signed_out" | "error" | "ready";
+
+/** Raison d'une déconnexion automatique : compte sans rôle ou désactivé. */
+export type AccessNotice = "no_access" | "inactive";
+
+export const ACCESS_NOTICE_MESSAGES: Record<AccessNotice, string> = {
+  no_access: "Accès non autorisé : votre compte n'a pas de rôle dans le back-office. Contactez un super administrateur d'UPCOM.",
+  inactive: "Accès non autorisé : ce compte a été désactivé. Contactez un super administrateur d'UPCOM.",
+};
 
 export interface AuthContextValue {
   status: AuthStatus;
@@ -17,6 +25,8 @@ export interface AuthContextValue {
   access: MyAccess | null;
   /** Vrai si la session provient d'un lien de réinitialisation du mot de passe. */
   isRecovery: boolean;
+  /** Dernier refus d'accès (affiché sur l'écran de connexion). */
+  notice: AccessNotice | null;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
