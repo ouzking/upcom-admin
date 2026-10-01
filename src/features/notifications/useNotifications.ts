@@ -1,11 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { CONTENT_RESOURCES, CONTENT_TABLES } from "@/config/resources";
 import { useAuth } from "@/features/auth/auth-context";
+import { useRealtimeLive } from "./realtime-context";
 import { queryKeys } from "@/lib/queryKeys";
 import type { ContentTable } from "@/repositories/content";
 import { dashboardRepository, type RecentMessage, type RecentQuote, type ScheduledArticle } from "@/repositories/dashboard.repository";
 
+/** Sondage de secours : 60 s sans temps réel, 5 min quand le direct est actif. */
 export const NOTIFICATIONS_REFRESH_MS = 60_000;
+export const NOTIFICATIONS_REFRESH_LIVE_MS = 5 * 60_000;
 
 export interface NotificationsData {
   newQuotes: RecentQuote[];
@@ -25,6 +28,7 @@ export interface NotificationsData {
  */
 export function useNotifications() {
   const { access, can, profile } = useAuth();
+  const live = useRealtimeLive();
   const canQuotes = can("quotes.view");
   const canMessages = can("contacts.view");
   const canArticles = can("articles.manage");
@@ -33,7 +37,7 @@ export function useNotifications() {
   return useQuery<NotificationsData>({
     queryKey: [...queryKeys.notifications, profile?.id, access?.role],
     enabled: Boolean(access),
-    refetchInterval: NOTIFICATIONS_REFRESH_MS,
+    refetchInterval: live ? NOTIFICATIONS_REFRESH_LIVE_MS : NOTIFICATIONS_REFRESH_MS,
     refetchOnWindowFocus: true,
     staleTime: 30_000,
     queryFn: async () => {

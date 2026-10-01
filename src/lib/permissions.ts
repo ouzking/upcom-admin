@@ -25,6 +25,6 @@ export function canWriteBucket(access: MyAccess | null | undefined, bucket: Stor
 /** Rôles qu'un utilisateur peut attribuer (miroir du trigger guard_profile_changes). */
 export function assignableRoles(access: MyAccess | null | undefined): AppRole[] {
   if (!can(access, "users.manage")) return [];
-  const roles: AppRole[] = ["editor", "communication_manager", "commercial"];
+  const roles: AppRole[] = ["editor", "communication_manager", "commercial", "viewer"];
   return access?.role === "super_admin" ? ["super_admin", ...roles] : roles;
 }

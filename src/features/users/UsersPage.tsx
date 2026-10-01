@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Info, UserPlus, Users } from "lucide-react";
+import { Info, Trash2, UserPlus, Users } from "lucide-react";
 import { useConfirm } from "@/components/feedback/confirm-context";
 import { EmptyState } from "@/components/feedback/States";
 import { useToast } from "@/components/feedback/toast-context";
 import { DataTable, type Column } from "@/components/data/DataTable";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { Button, IconButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Input";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -48,6 +48,30 @@ export default function UsersPage() {
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
+
+  const removeUser = useMutation({
+    mutationFn: (id: string) => usersRepository.remove(id),
+    onSuccess: async () => {
+      toast.success("Compte supprimé définitivement.");
+      await refresh();
+    },
+    onError: (error) => toast.error(errorMessage(error)),
+  });
+
+  const onDelete = async (user: ProfileRow) => {
+    const ok = await confirm({
+      tone: "danger",
+      title: `Supprimer définitivement le compte de ${displayName(user)} ?`,
+      description: (
+        <>
+          Le compte <strong>{user.email}</strong> sera supprimé et ne pourra plus se connecter. Ses contenus et les demandes qui lui étaient attribuées sont
+          conservés. Cette action est irréversible : pour une suspension temporaire, préférez « Désactiver ».
+        </>
+      ),
+      confirmLabel: "Supprimer le compte",
+    });
+    if (ok) removeUser.mutate(user.id);
+  };
 
   const setActive = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) => usersRepository.setActive(id, active),
@@ -150,9 +174,12 @@ export default function UsersPage() {
       align: "right",
       cell: (user) =>
         user.id !== me?.id && !(user.role === "super_admin" && access?.role !== "super_admin") ? (
-          <Button size="sm" variant={user.is_active ? "ghost" : "secondary"} onClick={() => void onToggleActive(user)} disabled={setActive.isPending}>
-            {user.is_active ? "Désactiver" : "Réactiver"}
-          </Button>
+          <div className="flex items-center justify-end gap-1">
+            <Button size="sm" variant={user.is_active ? "ghost" : "secondary"} onClick={() => void onToggleActive(user)} disabled={setActive.isPending}>
+              {user.is_active ? "Désactiver" : "Réactiver"}
+            </Button>
+            <IconButton icon={Trash2} label={`Supprimer définitivement le compte de ${displayName(user)}`} size="sm" variant="danger" disabled={removeUser.isPending} onClick={() => void onDelete(user)} />
+          </div>
         ) : null,
     },
   ];
@@ -187,7 +214,7 @@ export default function UsersPage() {
         />
       </Card>
       <p className="mt-4 text-[13px] text-muted">
-        La suppression définitive d'un compte se fait depuis le tableau de bord Supabase (Authentication → Users). Désactiver un compte suffit à lui retirer tout accès.
+        « Désactiver » suspend l'accès (réversible). La corbeille supprime définitivement le compte ; ses contenus sont conservés.
       </p>
       <InviteUserModal open={inviteOpen} onClose={() => setInviteOpen(false)} roles={roles} onInvited={refresh} />
       <RolesMatrix open={matrixOpen} onClose={() => setMatrixOpen(false)} />

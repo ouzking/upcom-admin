@@ -6,12 +6,14 @@ import { Spinner } from "@/components/ui/Spinner";
 import { CONTENT_RESOURCES } from "@/config/resources";
 import { formatDateTime, formatRelative } from "@/lib/format";
 import type { ContentTable } from "@/repositories/content";
+import { useRealtimeLive } from "./realtime-context";
 import { notificationCount, useNotifications, type NotificationsData } from "./useNotifications";
 
 export function NotificationsMenu() {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const { data, isLoading } = useNotifications();
+  const live = useRealtimeLive();
   const count = notificationCount(data);
 
   useEffect(() => {
@@ -55,7 +57,15 @@ export function NotificationsMenu() {
             aria-label="Notifications"
           >
             <div className="flex items-center justify-between border-b border-line px-4 py-3">
-              <p className="text-sm font-bold text-ink">Notifications</p>
+              <p className="flex items-center gap-2 text-sm font-bold text-ink">
+                Notifications
+                {live ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-success-50 px-2 py-0.5 text-[11px] font-semibold text-success" title="Les nouvelles demandes apparaissent instantanément">
+                    <span className="size-1.5 animate-pulse rounded-full bg-success" aria-hidden />
+                    En direct
+                  </span>
+                ) : null}
+              </p>
               {count ? <span className="text-xs font-semibold text-accent-deep">{count} en attente</span> : null}
             </div>
             <div className="scrollbar-thin max-h-[70vh] overflow-y-auto" onClick={(event) => (event.target as HTMLElement).closest("a") && setOpen(false)}>

@@ -37,6 +37,7 @@ export type {
   TeamMemberRow,
   TestimonialInsert,
   TestimonialRow,
+  AdminDeleteUserResult,
   AdminInviteUserPayload,
   AdminInviteUserResult,
   ApiResponse,

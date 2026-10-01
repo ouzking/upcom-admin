@@ -200,9 +200,11 @@ function QuoteDetail({ quote }: { quote: QuoteListItem }) {
               <Meta label="Reçue le" value={formatDateTime(quote.created_at)} />
               <Meta label="Dernière mise à jour" value={formatDateTime(quote.updated_at)} />
               <Meta label="Notification e-mail" value={quote.notified_at ? `Envoyée le ${formatDateTime(quote.notified_at)}` : "Non envoyée"} />
-              <Button variant="secondary" size="sm" icon={BellRing} loading={resend.isPending} onClick={() => resend.mutate(quote.id)} className="mt-2 w-full">
-                Renvoyer la notification à l'équipe
-              </Button>
+              {canManage ? (
+                <Button variant="secondary" size="sm" icon={BellRing} loading={resend.isPending} onClick={() => resend.mutate(quote.id)} className="mt-2 w-full">
+                  Renvoyer la notification à l'équipe
+                </Button>
+              ) : null}
             </CardBody>
           </Card>
 

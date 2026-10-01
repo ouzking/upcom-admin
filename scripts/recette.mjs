@@ -89,7 +89,7 @@ const isTransient = (error) => [502, 503, 504].includes(Number(error?.status ?? 
 /** Envoi avec nouvelles tentatives sur le MÊME chemin (un 504 peut survenir alors que le fichier est enregistré). */
 async function putFile(client, bucket, path, body, contentType) {
   for (let attempt = 1; ; attempt += 1) {
-    const { error } = await client.storage.from(bucket).upload(path, body, { contentType, upsert: attempt > 1 });
+    const { error } = await client.storage.from(bucket).upload(path, body, { contentType, cacheControl: "31536000", upsert: attempt > 1 });
     if (!error) return attempt;
     if (attempt >= 3 || !isTransient(error)) throw new Error(`upload ${bucket} : ${error.statusCode ?? error.status ?? ""} ${error.message}`.trim());
     await new Promise((resolve) => setTimeout(resolve, attempt * 1500));

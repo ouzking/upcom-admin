@@ -27,6 +27,7 @@ export const ROLE_PERMISSIONS: Record<AppRole, AppPermission[]> = {
   editor: ["services.manage", "projects.manage", "articles.manage", "events.manage", "team.manage", "testimonials.manage"],
   communication_manager: ["projects.manage", "articles.manage", "events.manage", "testimonials.manage", "contacts.view", "contacts.manage", "settings.manage"],
   commercial: ["quotes.view", "quotes.manage", "contacts.view", "contacts.manage"],
+  viewer: ["quotes.view", "contacts.view"],
 };
 
 export const accessFor = (role: AppRole): MyAccess => ({ role, permissions: ROLE_PERMISSIONS[role] });

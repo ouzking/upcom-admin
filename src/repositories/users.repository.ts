@@ -1,7 +1,7 @@
 import { EDGE_FUNCTIONS } from "@upcom/supabase";
 import { unwrap, assertAffected } from "@/lib/errors";
 import { supabase } from "@/lib/supabase";
-import type { AdminInviteUserPayload, AdminInviteUserResult, AppRole, ProfileRow } from "@/types";
+import type { AdminDeleteUserResult, AdminInviteUserPayload, AdminInviteUserResult, AppRole, ProfileRow } from "@/types";
 import { invokeFunction } from "./functions";
 
 /**
@@ -41,4 +41,11 @@ export const usersRepository = {
 
   invite: (payload: AdminInviteUserPayload) =>
     invokeFunction<AdminInviteUserResult>(EDGE_FUNCTIONS.adminInviteUser, payload),
+
+  /**
+   * Suppression définitive (Auth + profil) via l'Edge Function admin-delete-user.
+   * Refusée côté serveur pour son propre compte et le dernier super_admin actif ;
+   * contenus et demandes liés sont conservés (auteur / attribution vidés).
+   */
+  remove: (userId: string) => invokeFunction<AdminDeleteUserResult>(EDGE_FUNCTIONS.adminDeleteUser, { user_id: userId }),
 };

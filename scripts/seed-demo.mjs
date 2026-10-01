@@ -139,7 +139,7 @@ async function uploadImage(bucket, folder, name, options) {
   const path = buildStoragePath(folder, `${name}.webp`);
   // Délai serveur passager (502/503/504) : nouvelle tentative sur le même chemin.
   for (let attempt = 1; ; attempt += 1) {
-    const { error } = await supabase.storage.from(bucket).upload(path, buffer, { contentType: "image/webp", upsert: attempt > 1 });
+    const { error } = await supabase.storage.from(bucket).upload(path, buffer, { contentType: "image/webp", cacheControl: "31536000", upsert: attempt > 1 });
     if (!error) break;
     const transient = [502, 503, 504].includes(Number(error.status ?? error.statusCode)) || /time-?out/i.test(error.message ?? "");
     if (attempt >= 3 || !transient) check({ data: null, error }, `upload ${bucket}/${path}`);

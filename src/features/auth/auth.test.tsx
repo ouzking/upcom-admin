@@ -8,6 +8,7 @@ import { RedirectIfAuthenticated, RequireAuth, RequirePermission } from "./guard
 import LoginPage from "./pages/LoginPage";
 
 vi.mock("@/repositories/auth.repository", async () => (await import("@/test/fakes")).authModule);
+vi.mock("@/repositories/realtime.repository", () => ({ subscribeToLeads: () => () => undefined }));
 vi.mock("@/repositories/dashboard.repository", () => ({
   dashboardRepository: {
     recentQuotes: vi.fn(async () => []),

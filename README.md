@@ -37,7 +37,7 @@ React 19 · TypeScript (strict, `noUncheckedIndexedAccess`, aucun `any`) · Vite
 Framer Motion · Lucide React · Supabase JS · React Router (data router) · TanStack Query ·
 React Hook Form + Zod · Vitest + Testing Library.
 
-Les types de données viennent du package **`@upcom/supabase`** (dépôt `upcom-backend`, tag Git),
+Les types de données viennent du package **`@upcom/supabase`** (dépôt `upcom-backend`, tag Git `v0.2.0`),
 généré depuis le schéma : aucun modèle n'est redéfini à la main.
 
 ## 2. Installation
@@ -68,6 +68,7 @@ celui attendu par la configuration Auth du backend (`site_url`, redirections, `A
 | `npm run lint` | ESLint (règles React Hooks / React Compiler, `no-explicit-any`) |
 | `npm test` | tests Vitest |
 | `npm run seed:demo` / `seed:demo:prod` | contenu d'exemple (base locale / en ligne) — voir ci-dessous |
+| `npm run media:cache:prod` | passe les images déjà en ligne en cache d'un an (aperçu, puis `-- --apply`) |
 | `npm run recette` / `recette:prod` | recette automatisée des parcours (base locale / en ligne) — voir ci-dessous |
 
 **Recette automatisée** (`scripts/recette.mjs`) : avec votre session super_admin (identifiants demandés dans le
@@ -185,12 +186,16 @@ Comportement de l'interface :
 | **Messages** | boîte de réception à deux volets, lu / non lu (lecture automatique), répondu, archivage, notes internes, e-mail / appel / WhatsApp, renvoi de la notification |
 | **Médiathèque** | navigation par rubrique et dossier, upload multiple, aperçu, lien public, recherche, suppression (unitaire ou multiple) selon permissions |
 | **Paramètres** | identité, coordonnées officielles, logo, favicon, réseaux sociaux (ajout, masquage, suppression) |
-| **Utilisateurs** | liste, invitation, changement de rôle, activation / désactivation, matrice des droits |
+| **Utilisateurs** | liste, invitation, changement de rôle (dont **Observateur**, lecture seule), activation / désactivation, **suppression définitive** (`admin-delete-user` : jamais son propre compte ni le dernier super_admin), matrice des droits |
+| **Mettre à jour le site** | bouton de la barre supérieure : régénère pages pré-rendues et sitemap du site public (`trigger-site-rebuild`, build hook Netlify secret côté serveur) |
+| **Médiathèque → Nettoyer les médias inutilisés** | `cleanup-media` (settings.manage) : aperçu des images orphelines et de l'espace libéré, puis suppression confirmée |
 | **Mon compte** | nom, mot de passe, permissions |
 
 **Notifications** : dérivées des données (nouvelles demandes, nouveaux messages, articles programmés,
-brouillons des rubriques gérées), rafraîchies toutes les 60 s ; cloche avec compteur, badges dans le
-menu, toast à l'arrivée d'une nouvelle demande ou d'un nouveau message, compteur dans l'onglet.
+brouillons des rubriques gérées). **Temps réel** (backend v0.2.0, Supabase Realtime filtré par la RLS) :
+une nouvelle demande apparaît instantanément (badge « En direct » dans la cloche) ; sondage de secours
+toutes les 5 min (60 s si le direct est indisponible). Cloche avec compteur, badges dans le menu, toast,
+compteur dans l'onglet.
 
 **UX** : états de chargement (squelettes), vides, erreurs (avec « Réessayer »), succès (toasts),
 confirmations pour les actions sensibles, validation des formulaires en français alignée sur les

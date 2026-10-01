@@ -1,7 +1,7 @@
 import { useRef, useState, type DragEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router";
-import { CheckSquare, ChevronRight, Folder, FolderOpen, FolderPlus, Home, Lock, Square, Trash2, UploadCloud, X } from "lucide-react";
+import { CheckSquare, ChevronRight, Folder, FolderOpen, FolderPlus, Home, Lock, Sparkles, Square, Trash2, UploadCloud, X } from "lucide-react";
 import { useConfirm } from "@/components/feedback/confirm-context";
 import { EmptyState, ErrorState, LoadingState } from "@/components/feedback/States";
 import { useToast } from "@/components/feedback/toast-context";
@@ -17,11 +17,12 @@ import { useUpload } from "@/hooks/useUpload";
 import { cn } from "@/lib/cn";
 import { errorMessage } from "@/lib/errors";
 import { formatFileSize } from "@/lib/format";
-import { canWriteBucket } from "@/lib/permissions";
+import { can, canWriteBucket } from "@/lib/permissions";
 import { queryKeys } from "@/lib/queryKeys";
 import { acceptAttribute, BUCKET_RULES, BUCKETS, formatMimeList, publicUrl } from "@/lib/storage";
 import { mediaRepository, type MediaFile } from "@/repositories/media.repository";
 import type { StorageBucket } from "@/types";
+import { MediaCleanupModal } from "./MediaCleanupModal";
 import { MediaPreviewModal } from "./MediaPreviewModal";
 
 const isBucket = (value: string | null): value is StorageBucket => BUCKETS.includes(value as StorageBucket);
@@ -44,6 +45,9 @@ export default function MediaLibraryPage() {
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const canWrite = canWriteBucket(access, bucket);
+  // Nettoyage global (Edge Function cleanup-media) : permission settings.manage.
+  const canCleanup = can(access, "settings.manage");
+  const [cleanupOpen, setCleanupOpen] = useState(false);
   const confirm = useConfirm();
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -115,18 +119,28 @@ export default function MediaLibraryPage() {
         title="Médiathèque"
         description="Images du site, rangées par rubrique. Elles sont publiques : n'y déposez jamais de document confidentiel."
         actions={
-          canWrite ? (
+          canWrite || canCleanup ? (
             <>
-              <Button variant="secondary" icon={FolderPlus} onClick={() => setFolderModal(true)}>
-                Nouveau dossier
-              </Button>
-              <Button icon={UploadCloud} loading={uploading} onClick={() => inputRef.current?.click()}>
-                Téléverser
-              </Button>
+              {canCleanup ? (
+                <Button variant="ghost" icon={Sparkles} onClick={() => setCleanupOpen(true)}>
+                  Nettoyer les médias inutilisés
+                </Button>
+              ) : null}
+              {canWrite ? (
+                <>
+                  <Button variant="secondary" icon={FolderPlus} onClick={() => setFolderModal(true)}>
+                    Nouveau dossier
+                  </Button>
+                  <Button icon={UploadCloud} loading={uploading} onClick={() => inputRef.current?.click()}>
+                    Téléverser
+                  </Button>
+                </>
+              ) : null}
             </>
           ) : null
         }
       />
+      {canCleanup ? <MediaCleanupModal open={cleanupOpen} onClose={() => setCleanupOpen(false)} /> : null}
       <input
         ref={inputRef}
         type="file"
