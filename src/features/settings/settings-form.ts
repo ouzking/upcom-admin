@@ -13,6 +13,10 @@ export const settingsSchema = z.object({
   whatsapp_number: phoneField,
   map_url: httpsUrlField,
   opening_hours: optionalText(500),
+  legal_form: optionalText(120),
+  rccm: optionalText(60),
+  ninea: optionalText(30),
+  publication_director: optionalText(160),
   logo_path: z.string().nullable(),
   favicon_path: z.string().nullable(),
 });
@@ -30,6 +34,10 @@ export const settingsToValues = (row: SiteSettingsRow): SettingsFormValues => ({
   whatsapp_number: row.whatsapp_number ?? "",
   map_url: row.map_url ?? "",
   opening_hours: row.opening_hours ?? "",
+  legal_form: row.legal_form ?? "",
+  rccm: row.rccm ?? "",
+  ninea: row.ninea ?? "",
+  publication_director: row.publication_director ?? "",
   logo_path: row.logo_path,
   favicon_path: row.favicon_path,
 });
@@ -45,6 +53,10 @@ export const settingsToInput = (values: SettingsFormValues): Omit<SiteSettingsUp
   whatsapp_number: nullable(values.whatsapp_number),
   map_url: nullable(values.map_url),
   opening_hours: nullable(values.opening_hours),
+  legal_form: nullable(values.legal_form),
+  rccm: nullable(values.rccm),
+  ninea: nullable(values.ninea),
+  publication_director: nullable(values.publication_director),
   logo_path: values.logo_path,
   favicon_path: values.favicon_path,
 });

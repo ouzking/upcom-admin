@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -20,10 +21,13 @@ import type { SiteSettingsRow } from "@/types";
 import { FormSection } from "../content/EditorLayout";
 import { ReadOnlyNotice } from "../content/ReadOnlyNotice";
 import { settingsSchema, settingsToInput, settingsToValues, type SettingsFormValues } from "./settings-form";
+import { SiteRebuildButton } from "@/features/site/SiteRebuildButton";
 import { SocialLinksCard } from "./SocialLinksCard";
 
 export default function SettingsPage() {
   const query = useQuery({ queryKey: queryKeys.settings, queryFn: settingsRepository.get });
+  // Conservé ici : le formulaire est remonté (clé = updated_at) après chaque enregistrement.
+  const [rebuildSuggested, setRebuildSuggested] = useState(false);
   if (query.isLoading) return <LoadingState />;
   if (query.error || !query.data)
     return (
@@ -31,10 +35,25 @@ export default function SettingsPage() {
         <ErrorState error={query.error} onRetry={() => void query.refetch()} />
       </Card>
     );
-  return <SettingsForm key={query.data.updated_at} settings={query.data} />;
+  return (
+    <SettingsForm
+      key={query.data.updated_at}
+      settings={query.data}
+      rebuildSuggested={rebuildSuggested}
+      onSaved={() => setRebuildSuggested(true)}
+      onRebuilt={() => setRebuildSuggested(false)}
+    />
+  );
 }
 
-function SettingsForm({ settings }: { settings: SiteSettingsRow }) {
+interface SettingsFormProps {
+  settings: SiteSettingsRow;
+  rebuildSuggested: boolean;
+  onSaved: () => void;
+  onRebuilt: () => void;
+}
+
+function SettingsForm({ settings, rebuildSuggested, onSaved, onRebuilt }: SettingsFormProps) {
   const { can } = useAuth();
   const canManage = can("settings.manage");
   const toast = useToast();
@@ -50,6 +69,8 @@ function SettingsForm({ settings }: { settings: SiteSettingsRow }) {
       toast.success("Modification enregistrée.");
       reset(settingsToValues(row));
       queryClient.setQueryData(queryKeys.settings, row);
+      // Les pages pré-rendues du site (mentions légales, pied de page) ne changent qu'après régénération.
+      onSaved();
     },
     onError: (error) => toast.error(errorMessage(error)),
   });
@@ -71,6 +92,15 @@ function SettingsForm({ settings }: { settings: SiteSettingsRow }) {
         }
       />
       {!canManage ? <ReadOnlyNotice text="Consultation seule : la modification des paramètres est réservée aux rôles habilités." /> : null}
+      {rebuildSuggested ? (
+        <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-brand-100 bg-brand-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between" role="status">
+          <p className="text-sm text-ink-soft">
+            <strong className="text-ink">Modifications enregistrées.</strong> Mettez le site à jour pour que les pages pré-rendues (mentions légales, pied de page)
+            les affichent.
+          </p>
+          <SiteRebuildButton variant="primary" onDone={onRebuilt} />
+        </div>
+      ) : null}
 
       <form onSubmit={onSubmit} noValidate className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <fieldset disabled={!canManage} className="min-w-0 space-y-6">
@@ -110,6 +140,23 @@ function SettingsForm({ settings }: { settings: SiteSettingsRow }) {
             <Field label="Horaires d'ouverture" error={errors.opening_hours?.message}>
               <Textarea rows={3} {...register("opening_hours")} placeholder={"Ex. Lundi – vendredi : 9 h – 18 h"} />
             </Field>
+          </FormSection>
+
+          <FormSection title="Informations légales" description="Affichées dans les mentions légales et le pied de page du site.">
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Forme juridique" error={errors.legal_form?.message} hint="Ex. SARL, SA, SUARL…">
+                <Input {...register("legal_form")} maxLength={120} />
+              </Field>
+              <Field label="N° RCCM" error={errors.rccm?.message}>
+                <Input {...register("rccm")} maxLength={60} autoComplete="off" />
+              </Field>
+              <Field label="NINEA" error={errors.ninea?.message}>
+                <Input {...register("ninea")} maxLength={30} autoComplete="off" />
+              </Field>
+              <Field label="Directeur / directrice de la publication" error={errors.publication_director?.message}>
+                <Input {...register("publication_director")} maxLength={160} />
+              </Field>
+            </div>
           </FormSection>
         </fieldset>
 

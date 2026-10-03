@@ -37,7 +37,7 @@ React 19 · TypeScript (strict, `noUncheckedIndexedAccess`, aucun `any`) · Vite
 Framer Motion · Lucide React · Supabase JS · React Router (data router) · TanStack Query ·
 React Hook Form + Zod · Vitest + Testing Library.
 
-Les types de données viennent du package **`@upcom/supabase`** (dépôt `upcom-backend`, tag Git `v0.2.0`),
+Les types de données viennent du package **`@upcom/supabase`** (dépôt `upcom-backend`, tag Git `v0.3.0`),
 généré depuis le schéma : aucun modèle n'est redéfini à la main.
 
 ## 2. Installation
@@ -185,7 +185,7 @@ Comportement de l'interface :
 | **Demandes de devis** | compteurs par statut, fiche détaillée, pipeline Nouveau → En cours → Contacté → Converti / Clôturé, assignation, notes internes, **Répondre par e-mail / Appeler / WhatsApp** (+221 ajouté aux numéros sénégalais), renvoi de la notification |
 | **Messages** | boîte de réception à deux volets, lu / non lu (lecture automatique), répondu, archivage, notes internes, e-mail / appel / WhatsApp, renvoi de la notification |
 | **Médiathèque** | navigation par rubrique et dossier, upload multiple, aperçu, lien public, recherche, suppression (unitaire ou multiple) selon permissions |
-| **Paramètres** | identité, coordonnées officielles, logo, favicon, réseaux sociaux (ajout, masquage, suppression) |
+| **Paramètres** | identité, coordonnées officielles, **informations légales** (forme juridique, RCCM, NINEA, direction de la publication), logo, favicon, réseaux sociaux ; après enregistrement, proposition « Mettre le site à jour » |
 | **Utilisateurs** | liste, invitation, changement de rôle (dont **Observateur**, lecture seule), activation / désactivation, **suppression définitive** (`admin-delete-user` : jamais son propre compte ni le dernier super_admin), matrice des droits |
 | **Mettre à jour le site** | bouton de la barre supérieure : régénère pages pré-rendues et sitemap du site public (`trigger-site-rebuild`, build hook Netlify secret côté serveur) |
 | **Médiathèque → Nettoyer les médias inutilisés** | `cleanup-media` (settings.manage) : aperçu des images orphelines et de l'espace libéré, puis suppression confirmée |

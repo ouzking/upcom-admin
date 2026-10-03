@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { RefreshCcw } from "lucide-react";
 import { useToast } from "@/components/feedback/toast-context";
+import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/features/auth/auth-context";
 import { cn } from "@/lib/cn";
 import { errorMessage } from "@/lib/errors";
@@ -23,12 +24,13 @@ const CONTENT_PERMISSIONS: AppPermission[] = [
  * public (référencement). Les contenus publiés sont visibles immédiatement sans
  * cette action ; elle sert à ce que Google découvre les nouvelles pages.
  */
-export function SiteRebuildButton({ className }: { className?: string }) {
+export function SiteRebuildButton({ className, variant = "link", onDone }: { className?: string; variant?: "link" | "primary"; onDone?: () => void }) {
   const { can } = useAuth();
   const toast = useToast();
   const rebuild = useMutation({
     mutationFn: siteRepository.triggerRebuild,
     onSuccess: (result) => {
+      if (result.status === "triggered" || result.reason === "recently_triggered") onDone?.();
       if (result.status === "triggered") toast.success("Mise à jour du site lancée.", "Les pages et le plan du site seront régénérés d'ici 2 à 3 minutes.");
       else if (result.reason === "recently_triggered") toast.info("Mise à jour déjà en cours", "Une mise à jour a été lancée il y a moins d'une minute.");
       else toast.info("Mise à jour automatique non configurée", "Contactez l'administrateur technique (lien de reconstruction Netlify).");
@@ -37,6 +39,14 @@ export function SiteRebuildButton({ className }: { className?: string }) {
   });
 
   if (!CONTENT_PERMISSIONS.some(can)) return null;
+
+  if (variant === "primary") {
+    return (
+      <Button icon={RefreshCcw} loading={rebuild.isPending} onClick={() => rebuild.mutate()} className={className}>
+        Mettre le site à jour
+      </Button>
+    );
+  }
 
   return (
     <button
